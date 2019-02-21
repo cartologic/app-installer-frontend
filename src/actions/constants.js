@@ -1,0 +1,8 @@
+export const SET_APPS = "SET_APPS"
+export const ADD_APPS = "ADD_APPS"
+export const DELETE_APPS = "DELETE_APPS"
+export const APPS_LOADING = "APPS_LOADING"
+export const SET_TOTAL_COUNT = "SET_TOTAL_COUNT"
+export const SET_URLS = "SET_URLS"
+export const SET_USERNAME = "SET_USERNAME"
+export const SET_TOKEN = "SET_TOKEN"

@@ -1,0 +1,36 @@
+html,
+body {
+    margin: 0px;
+    padding: 0px;
+    height: 100%;
+
+}
+
+#root,
+.App {
+    height: 100%;
+}
+
+.element-flex {
+    display: flex;
+    flex-grow: 1;
+}
+
+.element-column {
+    flex-direction: column;
+}
+
+.title-noWrap {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    padding: 10px
+}
+
+.full-width {
+    width: 100%
+}
+
+.element-block {
+    display: block
+}
