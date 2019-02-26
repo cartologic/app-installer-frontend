@@ -48,706 +48,6 @@
 /******/ 		}
 /******/ 		return result;
 /******/ 	}
-/******/ 	function hotDisposeChunk(chunkId) {
-/******/ 		delete installedChunks[chunkId];
-/******/ 	}
-/******/ 	var parentHotUpdateCallback = window["webpackHotUpdate"];
-/******/ 	window["webpackHotUpdate"] = // eslint-disable-next-line no-unused-vars
-/******/ 	function webpackHotUpdateCallback(chunkId, moreModules) {
-/******/ 		hotAddUpdateChunk(chunkId, moreModules);
-/******/ 		if (parentHotUpdateCallback) parentHotUpdateCallback(chunkId, moreModules);
-/******/ 	} ;
-/******/
-/******/ 	// eslint-disable-next-line no-unused-vars
-/******/ 	function hotDownloadUpdateChunk(chunkId) {
-/******/ 		var script = document.createElement("script");
-/******/ 		script.charset = "utf-8";
-/******/ 		script.src = __webpack_require__.p + "" + chunkId + "." + hotCurrentHash + ".hot-update.js";
-/******/ 		if (null) script.crossOrigin = null;
-/******/ 		document.head.appendChild(script);
-/******/ 	}
-/******/
-/******/ 	// eslint-disable-next-line no-unused-vars
-/******/ 	function hotDownloadManifest(requestTimeout) {
-/******/ 		requestTimeout = requestTimeout || 10000;
-/******/ 		return new Promise(function(resolve, reject) {
-/******/ 			if (typeof XMLHttpRequest === "undefined") {
-/******/ 				return reject(new Error("No browser support"));
-/******/ 			}
-/******/ 			try {
-/******/ 				var request = new XMLHttpRequest();
-/******/ 				var requestPath = __webpack_require__.p + "" + hotCurrentHash + ".hot-update.json";
-/******/ 				request.open("GET", requestPath, true);
-/******/ 				request.timeout = requestTimeout;
-/******/ 				request.send(null);
-/******/ 			} catch (err) {
-/******/ 				return reject(err);
-/******/ 			}
-/******/ 			request.onreadystatechange = function() {
-/******/ 				if (request.readyState !== 4) return;
-/******/ 				if (request.status === 0) {
-/******/ 					// timeout
-/******/ 					reject(
-/******/ 						new Error("Manifest request to " + requestPath + " timed out.")
-/******/ 					);
-/******/ 				} else if (request.status === 404) {
-/******/ 					// no update available
-/******/ 					resolve();
-/******/ 				} else if (request.status !== 200 && request.status !== 304) {
-/******/ 					// other failure
-/******/ 					reject(new Error("Manifest request to " + requestPath + " failed."));
-/******/ 				} else {
-/******/ 					// success
-/******/ 					try {
-/******/ 						var update = JSON.parse(request.responseText);
-/******/ 					} catch (e) {
-/******/ 						reject(e);
-/******/ 						return;
-/******/ 					}
-/******/ 					resolve(update);
-/******/ 				}
-/******/ 			};
-/******/ 		});
-/******/ 	}
-/******/
-/******/ 	var hotApplyOnUpdate = true;
-/******/ 	// eslint-disable-next-line no-unused-vars
-/******/ 	var hotCurrentHash = "fa79d759f91c1a3e854e";
-/******/ 	var hotRequestTimeout = 10000;
-/******/ 	var hotCurrentModuleData = {};
-/******/ 	var hotCurrentChildModule;
-/******/ 	// eslint-disable-next-line no-unused-vars
-/******/ 	var hotCurrentParents = [];
-/******/ 	// eslint-disable-next-line no-unused-vars
-/******/ 	var hotCurrentParentsTemp = [];
-/******/
-/******/ 	// eslint-disable-next-line no-unused-vars
-/******/ 	function hotCreateRequire(moduleId) {
-/******/ 		var me = installedModules[moduleId];
-/******/ 		if (!me) return __webpack_require__;
-/******/ 		var fn = function(request) {
-/******/ 			if (me.hot.active) {
-/******/ 				if (installedModules[request]) {
-/******/ 					if (installedModules[request].parents.indexOf(moduleId) === -1) {
-/******/ 						installedModules[request].parents.push(moduleId);
-/******/ 					}
-/******/ 				} else {
-/******/ 					hotCurrentParents = [moduleId];
-/******/ 					hotCurrentChildModule = request;
-/******/ 				}
-/******/ 				if (me.children.indexOf(request) === -1) {
-/******/ 					me.children.push(request);
-/******/ 				}
-/******/ 			} else {
-/******/ 				console.warn(
-/******/ 					"[HMR] unexpected require(" +
-/******/ 						request +
-/******/ 						") from disposed module " +
-/******/ 						moduleId
-/******/ 				);
-/******/ 				hotCurrentParents = [];
-/******/ 			}
-/******/ 			return __webpack_require__(request);
-/******/ 		};
-/******/ 		var ObjectFactory = function ObjectFactory(name) {
-/******/ 			return {
-/******/ 				configurable: true,
-/******/ 				enumerable: true,
-/******/ 				get: function() {
-/******/ 					return __webpack_require__[name];
-/******/ 				},
-/******/ 				set: function(value) {
-/******/ 					__webpack_require__[name] = value;
-/******/ 				}
-/******/ 			};
-/******/ 		};
-/******/ 		for (var name in __webpack_require__) {
-/******/ 			if (
-/******/ 				Object.prototype.hasOwnProperty.call(__webpack_require__, name) &&
-/******/ 				name !== "e" &&
-/******/ 				name !== "t"
-/******/ 			) {
-/******/ 				Object.defineProperty(fn, name, ObjectFactory(name));
-/******/ 			}
-/******/ 		}
-/******/ 		fn.e = function(chunkId) {
-/******/ 			if (hotStatus === "ready") hotSetStatus("prepare");
-/******/ 			hotChunksLoading++;
-/******/ 			return __webpack_require__.e(chunkId).then(finishChunkLoading, function(err) {
-/******/ 				finishChunkLoading();
-/******/ 				throw err;
-/******/ 			});
-/******/
-/******/ 			function finishChunkLoading() {
-/******/ 				hotChunksLoading--;
-/******/ 				if (hotStatus === "prepare") {
-/******/ 					if (!hotWaitingFilesMap[chunkId]) {
-/******/ 						hotEnsureUpdateChunk(chunkId);
-/******/ 					}
-/******/ 					if (hotChunksLoading === 0 && hotWaitingFiles === 0) {
-/******/ 						hotUpdateDownloaded();
-/******/ 					}
-/******/ 				}
-/******/ 			}
-/******/ 		};
-/******/ 		fn.t = function(value, mode) {
-/******/ 			if (mode & 1) value = fn(value);
-/******/ 			return __webpack_require__.t(value, mode & ~1);
-/******/ 		};
-/******/ 		return fn;
-/******/ 	}
-/******/
-/******/ 	// eslint-disable-next-line no-unused-vars
-/******/ 	function hotCreateModule(moduleId) {
-/******/ 		var hot = {
-/******/ 			// private stuff
-/******/ 			_acceptedDependencies: {},
-/******/ 			_declinedDependencies: {},
-/******/ 			_selfAccepted: false,
-/******/ 			_selfDeclined: false,
-/******/ 			_disposeHandlers: [],
-/******/ 			_main: hotCurrentChildModule !== moduleId,
-/******/
-/******/ 			// Module API
-/******/ 			active: true,
-/******/ 			accept: function(dep, callback) {
-/******/ 				if (dep === undefined) hot._selfAccepted = true;
-/******/ 				else if (typeof dep === "function") hot._selfAccepted = dep;
-/******/ 				else if (typeof dep === "object")
-/******/ 					for (var i = 0; i < dep.length; i++)
-/******/ 						hot._acceptedDependencies[dep[i]] = callback || function() {};
-/******/ 				else hot._acceptedDependencies[dep] = callback || function() {};
-/******/ 			},
-/******/ 			decline: function(dep) {
-/******/ 				if (dep === undefined) hot._selfDeclined = true;
-/******/ 				else if (typeof dep === "object")
-/******/ 					for (var i = 0; i < dep.length; i++)
-/******/ 						hot._declinedDependencies[dep[i]] = true;
-/******/ 				else hot._declinedDependencies[dep] = true;
-/******/ 			},
-/******/ 			dispose: function(callback) {
-/******/ 				hot._disposeHandlers.push(callback);
-/******/ 			},
-/******/ 			addDisposeHandler: function(callback) {
-/******/ 				hot._disposeHandlers.push(callback);
-/******/ 			},
-/******/ 			removeDisposeHandler: function(callback) {
-/******/ 				var idx = hot._disposeHandlers.indexOf(callback);
-/******/ 				if (idx >= 0) hot._disposeHandlers.splice(idx, 1);
-/******/ 			},
-/******/
-/******/ 			// Management API
-/******/ 			check: hotCheck,
-/******/ 			apply: hotApply,
-/******/ 			status: function(l) {
-/******/ 				if (!l) return hotStatus;
-/******/ 				hotStatusHandlers.push(l);
-/******/ 			},
-/******/ 			addStatusHandler: function(l) {
-/******/ 				hotStatusHandlers.push(l);
-/******/ 			},
-/******/ 			removeStatusHandler: function(l) {
-/******/ 				var idx = hotStatusHandlers.indexOf(l);
-/******/ 				if (idx >= 0) hotStatusHandlers.splice(idx, 1);
-/******/ 			},
-/******/
-/******/ 			//inherit from previous dispose call
-/******/ 			data: hotCurrentModuleData[moduleId]
-/******/ 		};
-/******/ 		hotCurrentChildModule = undefined;
-/******/ 		return hot;
-/******/ 	}
-/******/
-/******/ 	var hotStatusHandlers = [];
-/******/ 	var hotStatus = "idle";
-/******/
-/******/ 	function hotSetStatus(newStatus) {
-/******/ 		hotStatus = newStatus;
-/******/ 		for (var i = 0; i < hotStatusHandlers.length; i++)
-/******/ 			hotStatusHandlers[i].call(null, newStatus);
-/******/ 	}
-/******/
-/******/ 	// while downloading
-/******/ 	var hotWaitingFiles = 0;
-/******/ 	var hotChunksLoading = 0;
-/******/ 	var hotWaitingFilesMap = {};
-/******/ 	var hotRequestedFilesMap = {};
-/******/ 	var hotAvailableFilesMap = {};
-/******/ 	var hotDeferred;
-/******/
-/******/ 	// The update info
-/******/ 	var hotUpdate, hotUpdateNewHash;
-/******/
-/******/ 	function toModuleId(id) {
-/******/ 		var isNumber = +id + "" === id;
-/******/ 		return isNumber ? +id : id;
-/******/ 	}
-/******/
-/******/ 	function hotCheck(apply) {
-/******/ 		if (hotStatus !== "idle") {
-/******/ 			throw new Error("check() is only allowed in idle status");
-/******/ 		}
-/******/ 		hotApplyOnUpdate = apply;
-/******/ 		hotSetStatus("check");
-/******/ 		return hotDownloadManifest(hotRequestTimeout).then(function(update) {
-/******/ 			if (!update) {
-/******/ 				hotSetStatus("idle");
-/******/ 				return null;
-/******/ 			}
-/******/ 			hotRequestedFilesMap = {};
-/******/ 			hotWaitingFilesMap = {};
-/******/ 			hotAvailableFilesMap = update.c;
-/******/ 			hotUpdateNewHash = update.h;
-/******/
-/******/ 			hotSetStatus("prepare");
-/******/ 			var promise = new Promise(function(resolve, reject) {
-/******/ 				hotDeferred = {
-/******/ 					resolve: resolve,
-/******/ 					reject: reject
-/******/ 				};
-/******/ 			});
-/******/ 			hotUpdate = {};
-/******/ 			for(var chunkId in installedChunks)
-/******/ 			// eslint-disable-next-line no-lone-blocks
-/******/ 			{
-/******/ 				/*globals chunkId */
-/******/ 				hotEnsureUpdateChunk(chunkId);
-/******/ 			}
-/******/ 			if (
-/******/ 				hotStatus === "prepare" &&
-/******/ 				hotChunksLoading === 0 &&
-/******/ 				hotWaitingFiles === 0
-/******/ 			) {
-/******/ 				hotUpdateDownloaded();
-/******/ 			}
-/******/ 			return promise;
-/******/ 		});
-/******/ 	}
-/******/
-/******/ 	// eslint-disable-next-line no-unused-vars
-/******/ 	function hotAddUpdateChunk(chunkId, moreModules) {
-/******/ 		if (!hotAvailableFilesMap[chunkId] || !hotRequestedFilesMap[chunkId])
-/******/ 			return;
-/******/ 		hotRequestedFilesMap[chunkId] = false;
-/******/ 		for (var moduleId in moreModules) {
-/******/ 			if (Object.prototype.hasOwnProperty.call(moreModules, moduleId)) {
-/******/ 				hotUpdate[moduleId] = moreModules[moduleId];
-/******/ 			}
-/******/ 		}
-/******/ 		if (--hotWaitingFiles === 0 && hotChunksLoading === 0) {
-/******/ 			hotUpdateDownloaded();
-/******/ 		}
-/******/ 	}
-/******/
-/******/ 	function hotEnsureUpdateChunk(chunkId) {
-/******/ 		if (!hotAvailableFilesMap[chunkId]) {
-/******/ 			hotWaitingFilesMap[chunkId] = true;
-/******/ 		} else {
-/******/ 			hotRequestedFilesMap[chunkId] = true;
-/******/ 			hotWaitingFiles++;
-/******/ 			hotDownloadUpdateChunk(chunkId);
-/******/ 		}
-/******/ 	}
-/******/
-/******/ 	function hotUpdateDownloaded() {
-/******/ 		hotSetStatus("ready");
-/******/ 		var deferred = hotDeferred;
-/******/ 		hotDeferred = null;
-/******/ 		if (!deferred) return;
-/******/ 		if (hotApplyOnUpdate) {
-/******/ 			// Wrap deferred object in Promise to mark it as a well-handled Promise to
-/******/ 			// avoid triggering uncaught exception warning in Chrome.
-/******/ 			// See https://bugs.chromium.org/p/chromium/issues/detail?id=465666
-/******/ 			Promise.resolve()
-/******/ 				.then(function() {
-/******/ 					return hotApply(hotApplyOnUpdate);
-/******/ 				})
-/******/ 				.then(
-/******/ 					function(result) {
-/******/ 						deferred.resolve(result);
-/******/ 					},
-/******/ 					function(err) {
-/******/ 						deferred.reject(err);
-/******/ 					}
-/******/ 				);
-/******/ 		} else {
-/******/ 			var outdatedModules = [];
-/******/ 			for (var id in hotUpdate) {
-/******/ 				if (Object.prototype.hasOwnProperty.call(hotUpdate, id)) {
-/******/ 					outdatedModules.push(toModuleId(id));
-/******/ 				}
-/******/ 			}
-/******/ 			deferred.resolve(outdatedModules);
-/******/ 		}
-/******/ 	}
-/******/
-/******/ 	function hotApply(options) {
-/******/ 		if (hotStatus !== "ready")
-/******/ 			throw new Error("apply() is only allowed in ready status");
-/******/ 		options = options || {};
-/******/
-/******/ 		var cb;
-/******/ 		var i;
-/******/ 		var j;
-/******/ 		var module;
-/******/ 		var moduleId;
-/******/
-/******/ 		function getAffectedStuff(updateModuleId) {
-/******/ 			var outdatedModules = [updateModuleId];
-/******/ 			var outdatedDependencies = {};
-/******/
-/******/ 			var queue = outdatedModules.slice().map(function(id) {
-/******/ 				return {
-/******/ 					chain: [id],
-/******/ 					id: id
-/******/ 				};
-/******/ 			});
-/******/ 			while (queue.length > 0) {
-/******/ 				var queueItem = queue.pop();
-/******/ 				var moduleId = queueItem.id;
-/******/ 				var chain = queueItem.chain;
-/******/ 				module = installedModules[moduleId];
-/******/ 				if (!module || module.hot._selfAccepted) continue;
-/******/ 				if (module.hot._selfDeclined) {
-/******/ 					return {
-/******/ 						type: "self-declined",
-/******/ 						chain: chain,
-/******/ 						moduleId: moduleId
-/******/ 					};
-/******/ 				}
-/******/ 				if (module.hot._main) {
-/******/ 					return {
-/******/ 						type: "unaccepted",
-/******/ 						chain: chain,
-/******/ 						moduleId: moduleId
-/******/ 					};
-/******/ 				}
-/******/ 				for (var i = 0; i < module.parents.length; i++) {
-/******/ 					var parentId = module.parents[i];
-/******/ 					var parent = installedModules[parentId];
-/******/ 					if (!parent) continue;
-/******/ 					if (parent.hot._declinedDependencies[moduleId]) {
-/******/ 						return {
-/******/ 							type: "declined",
-/******/ 							chain: chain.concat([parentId]),
-/******/ 							moduleId: moduleId,
-/******/ 							parentId: parentId
-/******/ 						};
-/******/ 					}
-/******/ 					if (outdatedModules.indexOf(parentId) !== -1) continue;
-/******/ 					if (parent.hot._acceptedDependencies[moduleId]) {
-/******/ 						if (!outdatedDependencies[parentId])
-/******/ 							outdatedDependencies[parentId] = [];
-/******/ 						addAllToSet(outdatedDependencies[parentId], [moduleId]);
-/******/ 						continue;
-/******/ 					}
-/******/ 					delete outdatedDependencies[parentId];
-/******/ 					outdatedModules.push(parentId);
-/******/ 					queue.push({
-/******/ 						chain: chain.concat([parentId]),
-/******/ 						id: parentId
-/******/ 					});
-/******/ 				}
-/******/ 			}
-/******/
-/******/ 			return {
-/******/ 				type: "accepted",
-/******/ 				moduleId: updateModuleId,
-/******/ 				outdatedModules: outdatedModules,
-/******/ 				outdatedDependencies: outdatedDependencies
-/******/ 			};
-/******/ 		}
-/******/
-/******/ 		function addAllToSet(a, b) {
-/******/ 			for (var i = 0; i < b.length; i++) {
-/******/ 				var item = b[i];
-/******/ 				if (a.indexOf(item) === -1) a.push(item);
-/******/ 			}
-/******/ 		}
-/******/
-/******/ 		// at begin all updates modules are outdated
-/******/ 		// the "outdated" status can propagate to parents if they don't accept the children
-/******/ 		var outdatedDependencies = {};
-/******/ 		var outdatedModules = [];
-/******/ 		var appliedUpdate = {};
-/******/
-/******/ 		var warnUnexpectedRequire = function warnUnexpectedRequire() {
-/******/ 			console.warn(
-/******/ 				"[HMR] unexpected require(" + result.moduleId + ") to disposed module"
-/******/ 			);
-/******/ 		};
-/******/
-/******/ 		for (var id in hotUpdate) {
-/******/ 			if (Object.prototype.hasOwnProperty.call(hotUpdate, id)) {
-/******/ 				moduleId = toModuleId(id);
-/******/ 				/** @type {TODO} */
-/******/ 				var result;
-/******/ 				if (hotUpdate[id]) {
-/******/ 					result = getAffectedStuff(moduleId);
-/******/ 				} else {
-/******/ 					result = {
-/******/ 						type: "disposed",
-/******/ 						moduleId: id
-/******/ 					};
-/******/ 				}
-/******/ 				/** @type {Error|false} */
-/******/ 				var abortError = false;
-/******/ 				var doApply = false;
-/******/ 				var doDispose = false;
-/******/ 				var chainInfo = "";
-/******/ 				if (result.chain) {
-/******/ 					chainInfo = "\nUpdate propagation: " + result.chain.join(" -> ");
-/******/ 				}
-/******/ 				switch (result.type) {
-/******/ 					case "self-declined":
-/******/ 						if (options.onDeclined) options.onDeclined(result);
-/******/ 						if (!options.ignoreDeclined)
-/******/ 							abortError = new Error(
-/******/ 								"Aborted because of self decline: " +
-/******/ 									result.moduleId +
-/******/ 									chainInfo
-/******/ 							);
-/******/ 						break;
-/******/ 					case "declined":
-/******/ 						if (options.onDeclined) options.onDeclined(result);
-/******/ 						if (!options.ignoreDeclined)
-/******/ 							abortError = new Error(
-/******/ 								"Aborted because of declined dependency: " +
-/******/ 									result.moduleId +
-/******/ 									" in " +
-/******/ 									result.parentId +
-/******/ 									chainInfo
-/******/ 							);
-/******/ 						break;
-/******/ 					case "unaccepted":
-/******/ 						if (options.onUnaccepted) options.onUnaccepted(result);
-/******/ 						if (!options.ignoreUnaccepted)
-/******/ 							abortError = new Error(
-/******/ 								"Aborted because " + moduleId + " is not accepted" + chainInfo
-/******/ 							);
-/******/ 						break;
-/******/ 					case "accepted":
-/******/ 						if (options.onAccepted) options.onAccepted(result);
-/******/ 						doApply = true;
-/******/ 						break;
-/******/ 					case "disposed":
-/******/ 						if (options.onDisposed) options.onDisposed(result);
-/******/ 						doDispose = true;
-/******/ 						break;
-/******/ 					default:
-/******/ 						throw new Error("Unexception type " + result.type);
-/******/ 				}
-/******/ 				if (abortError) {
-/******/ 					hotSetStatus("abort");
-/******/ 					return Promise.reject(abortError);
-/******/ 				}
-/******/ 				if (doApply) {
-/******/ 					appliedUpdate[moduleId] = hotUpdate[moduleId];
-/******/ 					addAllToSet(outdatedModules, result.outdatedModules);
-/******/ 					for (moduleId in result.outdatedDependencies) {
-/******/ 						if (
-/******/ 							Object.prototype.hasOwnProperty.call(
-/******/ 								result.outdatedDependencies,
-/******/ 								moduleId
-/******/ 							)
-/******/ 						) {
-/******/ 							if (!outdatedDependencies[moduleId])
-/******/ 								outdatedDependencies[moduleId] = [];
-/******/ 							addAllToSet(
-/******/ 								outdatedDependencies[moduleId],
-/******/ 								result.outdatedDependencies[moduleId]
-/******/ 							);
-/******/ 						}
-/******/ 					}
-/******/ 				}
-/******/ 				if (doDispose) {
-/******/ 					addAllToSet(outdatedModules, [result.moduleId]);
-/******/ 					appliedUpdate[moduleId] = warnUnexpectedRequire;
-/******/ 				}
-/******/ 			}
-/******/ 		}
-/******/
-/******/ 		// Store self accepted outdated modules to require them later by the module system
-/******/ 		var outdatedSelfAcceptedModules = [];
-/******/ 		for (i = 0; i < outdatedModules.length; i++) {
-/******/ 			moduleId = outdatedModules[i];
-/******/ 			if (
-/******/ 				installedModules[moduleId] &&
-/******/ 				installedModules[moduleId].hot._selfAccepted
-/******/ 			)
-/******/ 				outdatedSelfAcceptedModules.push({
-/******/ 					module: moduleId,
-/******/ 					errorHandler: installedModules[moduleId].hot._selfAccepted
-/******/ 				});
-/******/ 		}
-/******/
-/******/ 		// Now in "dispose" phase
-/******/ 		hotSetStatus("dispose");
-/******/ 		Object.keys(hotAvailableFilesMap).forEach(function(chunkId) {
-/******/ 			if (hotAvailableFilesMap[chunkId] === false) {
-/******/ 				hotDisposeChunk(chunkId);
-/******/ 			}
-/******/ 		});
-/******/
-/******/ 		var idx;
-/******/ 		var queue = outdatedModules.slice();
-/******/ 		while (queue.length > 0) {
-/******/ 			moduleId = queue.pop();
-/******/ 			module = installedModules[moduleId];
-/******/ 			if (!module) continue;
-/******/
-/******/ 			var data = {};
-/******/
-/******/ 			// Call dispose handlers
-/******/ 			var disposeHandlers = module.hot._disposeHandlers;
-/******/ 			for (j = 0; j < disposeHandlers.length; j++) {
-/******/ 				cb = disposeHandlers[j];
-/******/ 				cb(data);
-/******/ 			}
-/******/ 			hotCurrentModuleData[moduleId] = data;
-/******/
-/******/ 			// disable module (this disables requires from this module)
-/******/ 			module.hot.active = false;
-/******/
-/******/ 			// remove module from cache
-/******/ 			delete installedModules[moduleId];
-/******/
-/******/ 			// when disposing there is no need to call dispose handler
-/******/ 			delete outdatedDependencies[moduleId];
-/******/
-/******/ 			// remove "parents" references from all children
-/******/ 			for (j = 0; j < module.children.length; j++) {
-/******/ 				var child = installedModules[module.children[j]];
-/******/ 				if (!child) continue;
-/******/ 				idx = child.parents.indexOf(moduleId);
-/******/ 				if (idx >= 0) {
-/******/ 					child.parents.splice(idx, 1);
-/******/ 				}
-/******/ 			}
-/******/ 		}
-/******/
-/******/ 		// remove outdated dependency from module children
-/******/ 		var dependency;
-/******/ 		var moduleOutdatedDependencies;
-/******/ 		for (moduleId in outdatedDependencies) {
-/******/ 			if (
-/******/ 				Object.prototype.hasOwnProperty.call(outdatedDependencies, moduleId)
-/******/ 			) {
-/******/ 				module = installedModules[moduleId];
-/******/ 				if (module) {
-/******/ 					moduleOutdatedDependencies = outdatedDependencies[moduleId];
-/******/ 					for (j = 0; j < moduleOutdatedDependencies.length; j++) {
-/******/ 						dependency = moduleOutdatedDependencies[j];
-/******/ 						idx = module.children.indexOf(dependency);
-/******/ 						if (idx >= 0) module.children.splice(idx, 1);
-/******/ 					}
-/******/ 				}
-/******/ 			}
-/******/ 		}
-/******/
-/******/ 		// Not in "apply" phase
-/******/ 		hotSetStatus("apply");
-/******/
-/******/ 		hotCurrentHash = hotUpdateNewHash;
-/******/
-/******/ 		// insert new code
-/******/ 		for (moduleId in appliedUpdate) {
-/******/ 			if (Object.prototype.hasOwnProperty.call(appliedUpdate, moduleId)) {
-/******/ 				modules[moduleId] = appliedUpdate[moduleId];
-/******/ 			}
-/******/ 		}
-/******/
-/******/ 		// call accept handlers
-/******/ 		var error = null;
-/******/ 		for (moduleId in outdatedDependencies) {
-/******/ 			if (
-/******/ 				Object.prototype.hasOwnProperty.call(outdatedDependencies, moduleId)
-/******/ 			) {
-/******/ 				module = installedModules[moduleId];
-/******/ 				if (module) {
-/******/ 					moduleOutdatedDependencies = outdatedDependencies[moduleId];
-/******/ 					var callbacks = [];
-/******/ 					for (i = 0; i < moduleOutdatedDependencies.length; i++) {
-/******/ 						dependency = moduleOutdatedDependencies[i];
-/******/ 						cb = module.hot._acceptedDependencies[dependency];
-/******/ 						if (cb) {
-/******/ 							if (callbacks.indexOf(cb) !== -1) continue;
-/******/ 							callbacks.push(cb);
-/******/ 						}
-/******/ 					}
-/******/ 					for (i = 0; i < callbacks.length; i++) {
-/******/ 						cb = callbacks[i];
-/******/ 						try {
-/******/ 							cb(moduleOutdatedDependencies);
-/******/ 						} catch (err) {
-/******/ 							if (options.onErrored) {
-/******/ 								options.onErrored({
-/******/ 									type: "accept-errored",
-/******/ 									moduleId: moduleId,
-/******/ 									dependencyId: moduleOutdatedDependencies[i],
-/******/ 									error: err
-/******/ 								});
-/******/ 							}
-/******/ 							if (!options.ignoreErrored) {
-/******/ 								if (!error) error = err;
-/******/ 							}
-/******/ 						}
-/******/ 					}
-/******/ 				}
-/******/ 			}
-/******/ 		}
-/******/
-/******/ 		// Load self accepted modules
-/******/ 		for (i = 0; i < outdatedSelfAcceptedModules.length; i++) {
-/******/ 			var item = outdatedSelfAcceptedModules[i];
-/******/ 			moduleId = item.module;
-/******/ 			hotCurrentParents = [moduleId];
-/******/ 			try {
-/******/ 				__webpack_require__(moduleId);
-/******/ 			} catch (err) {
-/******/ 				if (typeof item.errorHandler === "function") {
-/******/ 					try {
-/******/ 						item.errorHandler(err);
-/******/ 					} catch (err2) {
-/******/ 						if (options.onErrored) {
-/******/ 							options.onErrored({
-/******/ 								type: "self-accept-error-handler-errored",
-/******/ 								moduleId: moduleId,
-/******/ 								error: err2,
-/******/ 								originalError: err
-/******/ 							});
-/******/ 						}
-/******/ 						if (!options.ignoreErrored) {
-/******/ 							if (!error) error = err2;
-/******/ 						}
-/******/ 						if (!error) error = err;
-/******/ 					}
-/******/ 				} else {
-/******/ 					if (options.onErrored) {
-/******/ 						options.onErrored({
-/******/ 							type: "self-accept-errored",
-/******/ 							moduleId: moduleId,
-/******/ 							error: err
-/******/ 						});
-/******/ 					}
-/******/ 					if (!options.ignoreErrored) {
-/******/ 						if (!error) error = err;
-/******/ 					}
-/******/ 				}
-/******/ 			}
-/******/ 		}
-/******/
-/******/ 		// handle errors in accept handlers and self accepted module load
-/******/ 		if (error) {
-/******/ 			hotSetStatus("fail");
-/******/ 			return Promise.reject(error);
-/******/ 		}
-/******/
-/******/ 		hotSetStatus("idle");
-/******/ 		return new Promise(function(resolve) {
-/******/ 			resolve(outdatedModules);
-/******/ 		});
-/******/ 	}
 /******/
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -772,14 +72,11 @@
 /******/ 		var module = installedModules[moduleId] = {
 /******/ 			i: moduleId,
 /******/ 			l: false,
-/******/ 			exports: {},
-/******/ 			hot: hotCreateModule(moduleId),
-/******/ 			parents: (hotCurrentParentsTemp = hotCurrentParents, hotCurrentParents = [], hotCurrentParentsTemp),
-/******/ 			children: []
+/******/ 			exports: {}
 /******/ 		};
 /******/
 /******/ 		// Execute the module function
-/******/ 		modules[moduleId].call(module.exports, module, module.exports, hotCreateRequire(moduleId));
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
 /******/
 /******/ 		// Flag the module as loaded
 /******/ 		module.l = true;
@@ -839,10 +136,7 @@
 /******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
 /******/
 /******/ 	// __webpack_public_path__
-/******/ 	__webpack_require__.p = "/static/app-installer-frontend/dist/";
-/******/
-/******/ 	// __webpack_hash__
-/******/ 	__webpack_require__.h = function() { return hotCurrentHash; };
+/******/ 	__webpack_require__.p = "/static/app_installer/dist/";
 /******/
 /******/ 	var jsonpArray = window["webpackJsonp"] = window["webpackJsonp"] || [];
 /******/ 	var oldJsonpFunction = jsonpArray.push.bind(jsonpArray);
@@ -853,7 +147,7 @@
 /******/
 /******/
 /******/ 	// add entry module to deferred list
-/******/ 	deferredModules.push([5,"react","lodash","extVendors","polyfill","semanticUI"]);
+/******/ 	deferredModules.push([5,"react","lodashLib","extVendors","polyfill","semanticUI"]);
 /******/ 	// run deferred modules when ready
 /******/ 	return checkDeferredModules();
 /******/ })
@@ -930,6 +224,35 @@ __webpack_require__(/*! ./lib/noConflict */ "./node_modules/@babel/polyfill/lib/
 
 /***/ }),
 
+/***/ "./node_modules/redux-devtools-extension/index.js":
+/*!********************************************************!*\
+  !*** ./node_modules/redux-devtools-extension/index.js ***!
+  \********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+var compose = __webpack_require__(/*! redux */ "./node_modules/redux/es/redux.js").compose;
+
+exports.__esModule = true;
+exports.composeWithDevTools = typeof window !== 'undefined' && window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ ? window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ : function () {
+  if (arguments.length === 0) return undefined;
+  if (_typeof(arguments[0]) === 'object') return compose;
+  return compose.apply(null, arguments);
+};
+
+exports.devToolsEnhancer = typeof window !== 'undefined' && window.__REDUX_DEVTOOLS_EXTENSION__ ? window.__REDUX_DEVTOOLS_EXTENSION__ : function () {
+  return function (noop) {
+    return noop;
+  };
+};
+
+/***/ }),
+
 /***/ "./node_modules/redux-thunk/es/index.js":
 /*!**********************************************!*\
   !*** ./node_modules/redux-thunk/es/index.js ***!
@@ -992,32 +315,7 @@ var update = __webpack_require__(/*! ../style-loader/lib/addStyles.js */ "./node
 
 if(content.locals) module.exports = content.locals;
 
-if(true) {
-	module.hot.accept(/*! !../mini-css-extract-plugin/dist/loader.js!../css-loader??ref--5-2!../postcss-loader/src??postcss!./semantic.min.css */ "./node_modules/mini-css-extract-plugin/dist/loader.js!./node_modules/css-loader/index.js?!./node_modules/postcss-loader/src/index.js?!./node_modules/semantic-ui-css/semantic.min.css", function() {
-		var newContent = __webpack_require__(/*! !../mini-css-extract-plugin/dist/loader.js!../css-loader??ref--5-2!../postcss-loader/src??postcss!./semantic.min.css */ "./node_modules/mini-css-extract-plugin/dist/loader.js!./node_modules/css-loader/index.js?!./node_modules/postcss-loader/src/index.js?!./node_modules/semantic-ui-css/semantic.min.css");
-
-		if(typeof newContent === 'string') newContent = [[module.i, newContent, '']];
-
-		var locals = (function(a, b) {
-			var key, idx = 0;
-
-			for(key in a) {
-				if(!b || a[key] !== b[key]) return false;
-				idx++;
-			}
-
-			for(key in b) idx--;
-
-			return idx === 0;
-		}(content.locals, newContent.locals));
-
-		if(!locals) throw new Error('Aborting CSS HMR due to changed css-modules locals.');
-
-		update(newContent);
-	});
-
-	module.hot.dispose(function() { update(); });
-}
+if(false) {}
 
 /***/ }),
 
@@ -1554,9 +852,9 @@ var _react = __webpack_require__(/*! react */ "./node_modules/react/index.js");
 
 var _react2 = _interopRequireDefault(_react);
 
-var _Pagination = __webpack_require__(/*! ./components/Pagination */ "./src/components/Pagination.jsx");
+var _AppStoreSelector = __webpack_require__(/*! ./components/AppStoreSelector */ "./src/components/AppStoreSelector.jsx");
 
-var _Pagination2 = _interopRequireDefault(_Pagination);
+var _AppStoreSelector2 = _interopRequireDefault(_AppStoreSelector);
 
 var _AppsList = __webpack_require__(/*! ./components/AppsList */ "./src/components/AppsList.jsx");
 
@@ -1609,24 +907,51 @@ var AppInstaller = function (_Component) {
                     _react2.default.createElement(_NavBar2.default, null),
                     _react2.default.createElement(
                         _semanticUiReact.Container,
-                        { textAlign: 'center', style: { marginTop: '7em' } },
+                        { textAlign: 'center', id: 'main-container' },
                         _react2.default.createElement(
-                            _semanticUiReact.Message,
-                            { warning: true },
+                            _semanticUiReact.Grid,
+                            { centered: true },
                             _react2.default.createElement(
-                                _semanticUiReact.Message.Header,
-                                null,
-                                "Warning!"
+                                _semanticUiReact.Grid.Row,
+                                { centered: true },
+                                _react2.default.createElement(
+                                    _semanticUiReact.Grid.Column,
+                                    { width: 15 },
+                                    _react2.default.createElement(
+                                        _semanticUiReact.Message,
+                                        { warning: true },
+                                        _react2.default.createElement(
+                                            _semanticUiReact.Message.Header,
+                                            null,
+                                            "Warning!"
+                                        ),
+                                        _react2.default.createElement(
+                                            'p',
+                                            null,
+                                            "Please note that the web server will be restarted after installing or uninstalling any application."
+                                        )
+                                    )
+                                )
                             ),
                             _react2.default.createElement(
-                                'p',
+                                _semanticUiReact.Grid.Row,
+                                { centered: true },
+                                _react2.default.createElement(
+                                    _semanticUiReact.Grid.Column,
+                                    { width: 15 },
+                                    _react2.default.createElement(_AppStoreSelector2.default, null)
+                                )
+                            ),
+                            _react2.default.createElement(
+                                _semanticUiReact.Grid.Row,
                                 null,
-                                "Please note that the web server will be restarted after installing or uninstalling any application."
+                                _react2.default.createElement(
+                                    _semanticUiReact.Grid.Column,
+                                    { width: 16 },
+                                    _react2.default.createElement(_AppsList2.default, null)
+                                )
                             )
-                        ),
-                        _react2.default.createElement(_AppsList2.default, null),
-                        _react2.default.createElement('br', null),
-                        _react2.default.createElement(_Pagination2.default, null)
+                        )
                     ),
                     _react2.default.createElement(_Footer2.default, null)
                 )
@@ -1638,8 +963,114 @@ var AppInstaller = function (_Component) {
 }(_react.Component);
 
 _reactDom2.default.render(_react2.default.createElement(AppInstaller, null), document.getElementById('root'));
-if (true) {
-    module.hot.accept();
+if (false) {}
+
+/***/ }),
+
+/***/ "./src/actions/appStores.js":
+/*!**********************************!*\
+  !*** ./src/actions/appStores.js ***!
+  \**********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.setAppStores = setAppStores;
+exports.selectAppStore = selectAppStore;
+exports.appStoresLoading = appStoresLoading;
+
+var _constants = __webpack_require__(/*! ./constants */ "./src/actions/constants.js");
+
+function setAppStores(stores) {
+    return {
+        type: _constants.SET_APP_STORES,
+        payload: stores
+    };
+}
+function selectAppStore(StoreID) {
+    return {
+        type: _constants.SELECT_APP_STORE,
+        payload: StoreID
+    };
+}
+function appStoresLoading(loading) {
+    return {
+        type: _constants.APP_STORES_LOADING,
+        payload: loading
+    };
+}
+
+/***/ }),
+
+/***/ "./src/actions/apps.js":
+/*!*****************************!*\
+  !*** ./src/actions/apps.js ***!
+  \*****************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.addApps = addApps;
+exports.updateInstalledApp = updateInstalledApp;
+exports.actionInProgress = actionInProgress;
+exports.deleteInstalledApps = deleteInstalledApps;
+exports.setInstalledApps = setInstalledApps;
+exports.installedAppsLoading = installedAppsLoading;
+exports.installedAppsTotalCount = installedAppsTotalCount;
+
+var _constants = __webpack_require__(/*! ./constants */ "./src/actions/constants.js");
+
+function addApps(apps) {
+    return {
+        type: _constants.ADD_INSTALLED_APPS,
+        payload: apps
+    };
+}
+function updateInstalledApp(app) {
+    return {
+        type: _constants.UPDATE_INSTALLED_APP,
+        payload: app
+    };
+}
+function actionInProgress(loading) {
+    return {
+        type: _constants.SET_ACTION_IN_PROGRESS,
+        payload: loading
+    };
+}
+function deleteInstalledApps(appIDs) {
+    return {
+        type: _constants.DELETE_INSTALLED_APPS,
+        payload: appIDs
+    };
+}
+function setInstalledApps(apps) {
+    return {
+        type: _constants.SET_INSTALLED_APPS,
+        payload: apps
+    };
+}
+function installedAppsLoading(loading) {
+    return {
+        type: _constants.INSTALLED_APPS_LOADING,
+        payload: loading
+    };
+}
+function installedAppsTotalCount(count) {
+    return {
+        type: _constants.SET_APPS_TOTAL_COUNT,
+        payload: count
+    };
 }
 
 /***/ }),
@@ -1657,14 +1088,595 @@ if (true) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-var SET_APPS = exports.SET_APPS = "SET_APPS";
-var ADD_APPS = exports.ADD_APPS = "ADD_APPS";
-var DELETE_APPS = exports.DELETE_APPS = "DELETE_APPS";
-var APPS_LOADING = exports.APPS_LOADING = "APPS_LOADING";
-var SET_TOTAL_COUNT = exports.SET_TOTAL_COUNT = "SET_TOTAL_COUNT";
+var SET_INSTALLED_APPS = exports.SET_INSTALLED_APPS = "SET_INSTALLED_APPS";
+var SET_STORE_APPS = exports.SET_STORE_APPS = "SET_STORE_APPS";
+var UPDATE_INSTALLED_APP = exports.UPDATE_INSTALLED_APP = "UPDATE_INSTALLED_APP";
+var SET_SORT_BY = exports.SET_SORT_BY = "SET_SORT_BY";
+var SET_SEARCH_TEXT = exports.SET_SEARCH_TEXT = "SET_SEARCH_TEXT";
+var SET_ACTIVE_PAGE = exports.SET_ACTIVE_PAGE = "SET_ACTIVE_PAGE";
+var SET_ITEMS_PER_PAGE = exports.SET_ITEMS_PER_PAGE = "SET_ITEMS_PER_PAGE";
+var SET_SORT_TYPE = exports.SET_SORT_TYPE = "SET_SORT_TYPE";
+var UPDATE_STORE_APP = exports.UPDATE_STORE_APP = "UPDATE_STORE_APP";
+var SET_ACTION_IN_PROGRESS = exports.SET_ACTION_IN_PROGRESS = "SET_ACTION_IN_PROGRESS";
+var SET_APP_STORES = exports.SET_APP_STORES = "SET_APP_STORES";
+var SELECT_APP_STORE = exports.SELECT_APP_STORE = "SELECT_APP_STORE";
+var APP_STORES_LOADING = exports.APP_STORES_LOADING = "APP_STORES_LOADING";
+var ADD_INSTALLED_APPS = exports.ADD_INSTALLED_APPS = "ADD_INSTALLED_APPS";
+var ADD_STORE_APPS = exports.ADD_STORE_APPS = "ADD_STORE_APPS";
+var DELETE_INSTALLED_APPS = exports.DELETE_INSTALLED_APPS = "DELETE_INSTALLED_APPS";
+var DELETE_STORE_APPS = exports.DELETE_STORE_APPS = "DELETE_STORE_APPS";
+var INSTALLED_APPS_LOADING = exports.INSTALLED_APPS_LOADING = "INSTALLED_APPS_LOADING";
+var STORE_APPS_LOADING = exports.STORE_APPS_LOADING = "STORE_APPS_LOADING";
+var SET_APPS_TOTAL_COUNT = exports.SET_APPS_TOTAL_COUNT = "SET_APPS_TOTAL_COUNT";
+var SET_STORE_TOTAL_COUNT = exports.SET_STORE_TOTAL_COUNT = "SET_STORE_TOTAL_COUNT";
 var SET_URLS = exports.SET_URLS = "SET_URLS";
 var SET_USERNAME = exports.SET_USERNAME = "SET_USERNAME";
 var SET_TOKEN = exports.SET_TOKEN = "SET_TOKEN";
+
+/***/ }),
+
+/***/ "./src/actions/filter.js":
+/*!*******************************!*\
+  !*** ./src/actions/filter.js ***!
+  \*******************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.setSortBy = setSortBy;
+exports.setSearchText = setSearchText;
+exports.setActivePage = setActivePage;
+exports.setItemsPerPage = setItemsPerPage;
+exports.setSortType = setSortType;
+
+var _constants = __webpack_require__(/*! ./constants */ "./src/actions/constants.js");
+
+function setSortBy(attributeName) {
+    return {
+        type: _constants.SET_SORT_BY,
+        payload: attributeName
+    };
+}
+function setSearchText(txt) {
+    return {
+        type: _constants.SET_SEARCH_TEXT,
+        payload: txt
+    };
+}
+function setActivePage(pageNumber) {
+    return {
+        type: _constants.SET_ACTIVE_PAGE,
+        payload: pageNumber
+    };
+}
+function setItemsPerPage(count) {
+    return {
+        type: _constants.SET_ITEMS_PER_PAGE,
+        payload: count
+    };
+}
+function setSortType(type) {
+    return {
+        type: _constants.SET_SORT_TYPE,
+        payload: type
+    };
+}
+
+/***/ }),
+
+/***/ "./src/actions/storeApps.js":
+/*!**********************************!*\
+  !*** ./src/actions/storeApps.js ***!
+  \**********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.addStoreApps = addStoreApps;
+exports.updateStoreApp = updateStoreApp;
+exports.deleteStoreApps = deleteStoreApps;
+exports.setStoreApps = setStoreApps;
+exports.storeAppsLoading = storeAppsLoading;
+exports.storeAppsTotalCount = storeAppsTotalCount;
+
+var _constants = __webpack_require__(/*! ./constants */ "./src/actions/constants.js");
+
+function addStoreApps(apps) {
+    return {
+        type: _constants.ADD_STORE_APPS,
+        payload: apps
+    };
+}
+function updateStoreApp(app) {
+    return {
+        type: _constants.UPDATE_STORE_APP,
+        payload: app
+    };
+}
+function deleteStoreApps(appIDs) {
+    return {
+        type: _constants.DELETE_STORE_APPS,
+        payload: appIDs
+    };
+}
+function setStoreApps(apps) {
+    return {
+        type: _constants.SET_STORE_APPS,
+        payload: apps
+    };
+}
+function storeAppsLoading(loading) {
+    return {
+        type: _constants.STORE_APPS_LOADING,
+        payload: loading
+    };
+}
+function storeAppsTotalCount(count) {
+    return {
+        type: _constants.SET_STORE_TOTAL_COUNT,
+        payload: count
+    };
+}
+
+/***/ }),
+
+/***/ "./src/api/apps.jsx":
+/*!**************************!*\
+  !*** ./src/api/apps.jsx ***!
+  \**************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+exports.getStoresApps = getStoresApps;
+exports.getInstalledApps = getInstalledApps;
+exports.mergeApps = mergeApps;
+
+var _utils = __webpack_require__(/*! ./utils */ "./src/api/utils.jsx");
+
+var requests = new _utils.ApiRequests();
+function getStoresApps(store) {
+	return requests.doGet(store.url + 'app/?server_type__name=' + store.server_type + '&cartoview_version=' + window.appInstallerProps.cartoview_version, undefined, {
+		mode: 'cors'
+	});
+}
+function getInstalledApps() {
+	var urls = window.appInstallerProps.urls;
+
+	return requests.doGet(urls.appsURL);
+}
+function getAppByName(installedApps, name) {
+	var app = installedApps.find(function (app) {
+		return app.name === name;
+	});
+	var index = installedApps.findIndex(function (app) {
+		return app.name === name;
+	});
+	return [app, index];
+}
+function mergeApps(storeApps, installedApps) {
+	for (var index = 0; index < storeApps.length; index++) {
+		var app = storeApps[index];
+		var installedApp = getAppByName(installedApps, app.name);
+		if (installedApp[0]) {
+			app.installedApp = installedApp[0];
+		} else {
+			app.installedApp = undefined;
+		}
+	}
+	return storeApps;
+}
+
+/***/ }),
+
+/***/ "./src/api/compare.js":
+/*!****************************!*\
+  !*** ./src/api/compare.js ***!
+  \****************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.versionCompare = versionCompare;
+/**
+ * Compares two software version numbers (e.g. "1.7.1" or "1.2b").
+ *
+ * This function was born in http://stackoverflow.com/a/6832721.
+ *
+ * @param {string} v1 The first version to be compared.
+ * @param {string} v2 The second version to be compared.
+ * @param {object} [options] Optional flags that affect comparison behavior:
+ * lexicographical: (true/[false]) compares each part of the version strings lexicographically instead of naturally; 
+ *                  this allows suffixes such as "b" or "dev" but will cause "1.10" to be considered smaller than "1.2".
+ * zeroExtend: ([true]/false) changes the result if one version string has less parts than the other. In
+ *             this case the shorter string will be padded with "zero" parts instead of being considered smaller.
+ *
+ * @returns {number|NaN}
+ * - 0 if the versions are equal
+ * - a negative integer iff v1 < v2
+ * - a positive integer iff v1 > v2
+ * - NaN if either version string is in the wrong format
+ */
+function versionCompare(v1, v2, options) {
+    var lexicographical = options && options.lexicographical || false,
+        zeroExtend = options && options.zeroExtend || true,
+        v1parts = (v1 || "0").split('.'),
+        v2parts = (v2 || "0").split('.');
+
+    function isValidPart(x) {
+        return (lexicographical ? /^\d+[A-Za-zαß]*$/ : /^\d+[A-Za-zαß]?$/).test(x);
+    }
+    if (!v1parts.every(isValidPart) || !v2parts.every(isValidPart)) {
+        return NaN;
+    }
+    if (zeroExtend) {
+        while (v1parts.length < v2parts.length) {
+            v1parts.push("0");
+        }while (v2parts.length < v1parts.length) {
+            v2parts.push("0");
+        }
+    }
+    if (!lexicographical) {
+        v1parts = v1parts.map(function (x) {
+            var match = /[A-Za-zαß]/.exec(x);
+            return Number(match ? x.replace(match[0], "." + x.charCodeAt(match.index)) : x);
+        });
+        v2parts = v2parts.map(function (x) {
+            var match = /[A-Za-zαß]/.exec(x);
+            return Number(match ? x.replace(match[0], "." + x.charCodeAt(match.index)) : x);
+        });
+    }
+    for (var i = 0; i < v1parts.length; ++i) {
+        if (v2parts.length == i) {
+            return 1;
+        }
+        if (v1parts[i] == v2parts[i]) {
+            continue;
+        } else if (v1parts[i] > v2parts[i]) {
+            return 1;
+        } else {
+            return -1;
+        }
+    }
+    if (v1parts.length != v2parts.length) {
+        return -1;
+    }
+    return 0;
+}
+
+/***/ }),
+
+/***/ "./src/api/stores.jsx":
+/*!****************************!*\
+  !*** ./src/api/stores.jsx ***!
+  \****************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+exports.getStores = getStores;
+
+var _utils = __webpack_require__(/*! ./utils */ "./src/api/utils.jsx");
+
+var requests = new _utils.ApiRequests();
+function getStores() {
+	var urls = window.appInstallerProps.urls;
+
+	return requests.doGet(urls.storesURL);
+}
+
+/***/ }),
+
+/***/ "./src/api/utils.jsx":
+/*!***************************!*\
+  !*** ./src/api/utils.jsx ***!
+  \***************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function updateProgress(evt) {
+	if (evt.lengthComputable) {
+		var percentComplete = evt.loaded / evt.total * 100;
+	}
+}
+
+function transferComplete(evt) {
+	console.log("The transfer is complete.");
+}
+
+function transferFailed(evt) {
+	console.error("An error occurred while transferring the file.");
+}
+
+var ApiRequests = exports.ApiRequests = function () {
+	function ApiRequests() {
+		_classCallCheck(this, ApiRequests);
+	}
+
+	_createClass(ApiRequests, [{
+		key: "getHeaders",
+		value: function getHeaders() {
+			return [];
+		}
+	}, {
+		key: "doPost",
+		value: function doPost(url, data) {
+			var extraHeaders = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+			var options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+
+			var headers = _extends({}, this.getHeaders(), extraHeaders);
+			return fetch(url, _extends({
+				method: 'POST',
+				redirect: 'follow',
+				credentials: options['mode'] && options['mode'] === 'cors' ? 'omit' : 'include'
+			}, options, {
+				headers: headers,
+				body: data
+			})).then(function (response) {
+				return response.json();
+			});
+		}
+	}, {
+		key: "doDelete",
+		value: function doDelete(url) {
+			var extraHeaders = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+			var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+
+			var headers = _extends({}, this.getHeaders(), extraHeaders);
+			return fetch(url, _extends({
+				method: 'DELETE',
+				redirect: 'follow',
+				credentials: options['mode'] && options['mode'] === 'cors' ? 'omit' : 'include'
+			}, options, {
+				headers: headers
+			})).then(function (response) {
+				return response.text();
+			});
+		}
+	}, {
+		key: "doGet",
+		value: function doGet(url) {
+			var extraHeaders = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+			var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+
+			var headers = _extends({}, this.getHeaders(), extraHeaders);
+			return fetch(url, _extends({
+				method: 'GET',
+				credentials: options['mode'] && options['mode'] === 'cors' ? 'omit' : 'include'
+			}, options, {
+				headers: headers
+			})).then(function (response) {
+				return response.json();
+			});
+		}
+	}, {
+		key: "uploadWithProgress",
+		value: function uploadWithProgress(url, data, resultFunc) {
+			var progressFunc = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : updateProgress;
+			var loadFunc = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : transferComplete;
+			var errorFunc = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : transferFailed;
+
+
+			var xhr = new XMLHttpRequest();
+			xhr.upload.addEventListener("progress", function (evt) {
+				progressFunc(evt);
+			}, false);
+			xhr.addEventListener("load", function (evt) {
+				loadFunc(xhr);
+			});
+			xhr.addEventListener("error", function () {
+				errorFunc(xhr);
+			});
+			xhr.onreadystatechange = function () {
+				if (xhr.readyState == XMLHttpRequest.DONE) {
+					resultFunc(xhr.responseText);
+				}
+			};
+			xhr.open('POST', url, true);
+			xhr.setRequestHeader("Cache-Control", "no-cache");
+			xhr.setRequestHeader('Authorization', "ApiKey " + this.username + ":" + this.token);
+			xhr.send(data);
+		}
+	}]);
+
+	return ApiRequests;
+}();
+
+/***/ }),
+
+/***/ "./src/components/AppStoreSelector.jsx":
+/*!*********************************************!*\
+  !*** ./src/components/AppStoreSelector.jsx ***!
+  \*********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _semanticUiReact = __webpack_require__(/*! semantic-ui-react */ "./node_modules/semantic-ui-react/dist/es/index.js");
+
+var _appStores = __webpack_require__(/*! ../actions/appStores */ "./src/actions/appStores.js");
+
+var _propTypes = __webpack_require__(/*! prop-types */ "./node_modules/prop-types/index.js");
+
+var _propTypes2 = _interopRequireDefault(_propTypes);
+
+var _react = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+
+var _react2 = _interopRequireDefault(_react);
+
+var _reactRedux = __webpack_require__(/*! react-redux */ "./node_modules/react-redux/es/index.js");
+
+var _stores = __webpack_require__(/*! ../api/stores */ "./src/api/stores.jsx");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var AppStoreSelector = function (_React$Component) {
+	_inherits(AppStoreSelector, _React$Component);
+
+	function AppStoreSelector() {
+		var _ref;
+
+		var _temp, _this, _ret;
+
+		_classCallCheck(this, AppStoreSelector);
+
+		for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+			args[_key] = arguments[_key];
+		}
+
+		return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = AppStoreSelector.__proto__ || Object.getPrototypeOf(AppStoreSelector)).call.apply(_ref, [this].concat(args))), _this), _this.onChange = function (event, _ref2) {
+			var value = _ref2.value;
+			var selectStore = _this.props.selectStore;
+
+			selectStore(value);
+		}, _this.getDefaultStore = function () {
+			var _this$props = _this.props,
+			    appStores = _this$props.appStores,
+			    selectStore = _this$props.selectStore;
+
+			var defaultStoreID = undefined;
+			for (var index = 0; index < appStores.stores.length; index++) {
+				var store = appStores.stores[index];
+				if (store.is_default) {
+					defaultStoreID = store.id;
+				}
+			}
+			selectStore(defaultStoreID);
+			return defaultStoreID;
+		}, _temp), _possibleConstructorReturn(_this, _ret);
+	}
+
+	_createClass(AppStoreSelector, [{
+		key: 'componentDidMount',
+		value: function componentDidMount() {
+			var _this2 = this;
+
+			var _props = this.props,
+			    setStores = _props.setStores,
+			    setStoresLoading = _props.setStoresLoading;
+
+			(0, _stores.getStores)().then(function (data) {
+				setStores(data.results);
+				_this2.getDefaultStore();
+				setStoresLoading(false);
+			});
+		}
+	}, {
+		key: 'getStoresOptions',
+		value: function getStoresOptions() {
+			var appStores = this.props.appStores;
+
+			var storesOptions = appStores.stores.map(function (store) {
+				return {
+					text: store.name + ' (' + store.server_type + ')',
+					value: store.id
+				};
+			});
+			return storesOptions;
+		}
+	}, {
+		key: 'render',
+		value: function render() {
+			var appStores = this.props.appStores;
+
+			return _react2.default.createElement(
+				'div',
+				null,
+				appStores.loading ? _react2.default.createElement(
+					_semanticUiReact.Dimmer,
+					{ active: true, inverted: true },
+					_react2.default.createElement(_semanticUiReact.Loader, { inverted: true, content: 'Loading' })
+				) : _react2.default.createElement(_semanticUiReact.Dropdown, { onChange: this.onChange,
+					placeholder: 'Select an App Store',
+					value: appStores.selectedStoreID,
+					fluid: true,
+					selection: true,
+					options: this.getStoresOptions() })
+			);
+		}
+	}]);
+
+	return AppStoreSelector;
+}(_react2.default.Component);
+
+AppStoreSelector.propTypes = {
+	setStores: _propTypes2.default.func.isRequired,
+	setStoresLoading: _propTypes2.default.func.isRequired,
+	selectStore: _propTypes2.default.func.isRequired,
+	appStores: _propTypes2.default.object.isRequired
+};
+var mapStateToProps = function mapStateToProps(state) {
+	return {
+		appStores: state.appStores
+	};
+};
+var mapDispatchToProps = function mapDispatchToProps(dispatch) {
+	return {
+		setStores: function setStores(stores) {
+			return dispatch((0, _appStores.setAppStores)(stores));
+		},
+		setStoresLoading: function setStoresLoading(loading) {
+			return dispatch((0, _appStores.appStoresLoading)(loading));
+		},
+		selectStore: function selectStore(selectedStoreID) {
+			return dispatch((0, _appStores.selectAppStore)(selectedStoreID));
+		}
+	};
+};
+
+exports.default = (0, _reactRedux.connect)(mapStateToProps, mapDispatchToProps)(AppStoreSelector);
 
 /***/ }),
 
@@ -1682,7 +1694,377 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _lodash = __webpack_require__(/*! lodash */ "./node_modules/lodash/lodash.js");
+
+var _ = _interopRequireWildcard(_lodash);
+
 var _semanticUiReact = __webpack_require__(/*! semantic-ui-react */ "./node_modules/semantic-ui-react/dist/es/index.js");
+
+var _apps = __webpack_require__(/*! ../api/apps */ "./src/api/apps.jsx");
+
+var _apps2 = __webpack_require__(/*! ../actions/apps */ "./src/actions/apps.js");
+
+var _storeApps = __webpack_require__(/*! ../actions/storeApps */ "./src/actions/storeApps.js");
+
+var _Filter = __webpack_require__(/*! ./Filter */ "./src/components/Filter.jsx");
+
+var _Filter2 = _interopRequireDefault(_Filter);
+
+var _Pagination = __webpack_require__(/*! ./Pagination */ "./src/components/Pagination.jsx");
+
+var _Pagination2 = _interopRequireDefault(_Pagination);
+
+var _CardsLoading = __webpack_require__(/*! ./CardsLoading */ "./src/components/CardsLoading.jsx");
+
+var _CardsLoading2 = _interopRequireDefault(_CardsLoading);
+
+var _propTypes = __webpack_require__(/*! prop-types */ "./node_modules/prop-types/index.js");
+
+var _propTypes2 = _interopRequireDefault(_propTypes);
+
+var _react = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+
+var _react2 = _interopRequireDefault(_react);
+
+var _reactRedux = __webpack_require__(/*! react-redux */ "./node_modules/react-redux/es/index.js");
+
+var _compare = __webpack_require__(/*! ../api/compare */ "./src/api/compare.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var colorsMapping = {
+	"Alpha": "red",
+	"Beta": "yellow",
+	"Stable": "green"
+};
+
+var AppsList = function (_React$Component) {
+	_inherits(AppsList, _React$Component);
+
+	function AppsList() {
+		var _ref;
+
+		var _temp, _this, _ret;
+
+		_classCallCheck(this, AppsList);
+
+		for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+			args[_key] = arguments[_key];
+		}
+
+		return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = AppsList.__proto__ || Object.getPrototypeOf(AppsList)).call.apply(_ref, [this].concat(args))), _this), _this.sortApps = function () {
+			var _this$props = _this.props,
+			    apps = _this$props.apps,
+			    appFilters = _this$props.appFilters;
+
+
+			return _.orderBy(apps.storeApps, [appFilters.sortBy], [appFilters.sortType]);
+		}, _this.getTotalPages = function () {
+			var _this$props2 = _this.props,
+			    apps = _this$props2.apps,
+			    appFilters = _this$props2.appFilters;
+
+			return Math.ceil(apps.storeCount / appFilters.itemsPerPage);
+		}, _this.searchApps = function (apps) {
+			var appFilters = _this.props.appFilters;
+
+			if (appFilters.searchText != "") {
+				return _.filter(apps, function (app) {
+					var title = app.title,
+					    description = app.description;
+
+					var searchText = appFilters.searchText.toLowerCase();
+					title = title.toLowerCase();
+					description = description.toLowerCase();
+					return title.includes(searchText) || description.includes(searchText);
+				});
+			}
+			return apps;
+		}, _this.getApps = function () {
+			var apps = _this.sortApps();
+			apps = _this.searchApps(apps);
+			return _this.paginate(apps);
+		}, _this.paginate = function (apps) {
+			var appFilters = _this.props.appFilters;
+
+			var startIndex = (appFilters.activePage - 1) * appFilters.itemsPerPage;
+			var endIndex = appFilters.activePage * appFilters.itemsPerPage;
+			return apps.slice(startIndex, endIndex);
+		}, _this.getInstalledByName = function (name) {
+			var apps = _this.props.apps;
+
+			return apps.installed.find(function (app) {
+				return app.name == name;
+			});
+		}, _temp), _possibleConstructorReturn(_this, _ret);
+	}
+
+	_createClass(AppsList, [{
+		key: 'componentDidUpdate',
+		value: function componentDidUpdate(prevProps) {
+			var _this2 = this;
+
+			var appStores = prevProps.appStores;
+
+			if (this.props.appStores.selectedStoreID && appStores.selectedStoreID != this.props.appStores.selectedStoreID) {
+				var _props = this.props,
+				    setStoreAppsList = _props.setStoreAppsList,
+				    setStoreCount = _props.setStoreCount,
+				    setStoreLoading = _props.setStoreLoading;
+
+				var store = this.props.appStores.stores.find(function (store) {
+					return store.id === _this2.props.appStores.selectedStoreID;
+				});
+				(0, _apps.getStoresApps)(store).then(function (data) {
+					var storeApps = data.objects.map(function (storeApp) {
+						storeApp.compatible = false;
+						var cartoview_versions = storeApp.latest_version.cartoview_version;
+						for (var index = 0; index < cartoview_versions.length; index++) {
+							var cartoview_version = cartoview_versions[index];
+							if ((0, _compare.versionCompare)(cartoview_version.version, window.appInstallerProps.cartoview_version, { 'lexicographical': true }) == 0) {
+								storeApp.compatible = true;
+								break;
+							}
+						}
+						return storeApp;
+					});
+					setStoreAppsList(storeApps);
+					setStoreCount(data.meta.total_count);
+					setStoreLoading(false);
+				});
+				var _props2 = this.props,
+				    setInstalled = _props2.setInstalled,
+				    setInstalledLoading = _props2.setInstalledLoading,
+				    setIntalledCount = _props2.setIntalledCount;
+
+				(0, _apps.getInstalledApps)().then(function (data) {
+					setInstalled(data.results);
+					setIntalledCount(data.count);
+					setInstalledLoading(false);
+				});
+			}
+		}
+	}, {
+		key: 'render',
+		value: function render() {
+			var _this3 = this;
+
+			var _props3 = this.props,
+			    apps = _props3.apps,
+			    appStores = _props3.appStores,
+			    appFilters = _props3.appFilters;
+
+			var totalPages = this.getTotalPages();
+			return _react2.default.createElement(
+				'div',
+				null,
+				apps.storeAppsLoading || apps.installedAppsLoading || appStores.loading ? _react2.default.createElement(_CardsLoading2.default, null) : _react2.default.createElement(
+					_semanticUiReact.Grid,
+					{ centered: true },
+					_react2.default.createElement(
+						_semanticUiReact.Grid.Row,
+						{ centered: true },
+						_react2.default.createElement(
+							_semanticUiReact.Grid.Column,
+							{ width: 15, textAlign: 'center' },
+							_react2.default.createElement(_Filter2.default, null)
+						)
+					),
+					_react2.default.createElement(
+						_semanticUiReact.Grid.Row,
+						null,
+						_react2.default.createElement(
+							_semanticUiReact.Grid.Column,
+							null,
+							_react2.default.createElement(
+								_semanticUiReact.Card.Group,
+								{ centered: true },
+								this.getApps().map(function (app) {
+									var installedApp = _this3.getInstalledByName(app.name);
+									return _react2.default.createElement(
+										_semanticUiReact.Card,
+										{ centered: true, key: app.id },
+										_react2.default.createElement(_semanticUiReact.Image, {
+											wrapped: true,
+											fluid: true,
+											className: 'card-img ',
+											label: { as: 'a', color: colorsMapping[app.status], content: app.status, ribbon: true },
+											src: app.latest_version.logo }),
+										_react2.default.createElement(
+											_semanticUiReact.Card.Content,
+											null,
+											_react2.default.createElement(
+												_semanticUiReact.Card.Header,
+												null,
+												app.title
+											),
+											_react2.default.createElement(
+												_semanticUiReact.Card.Meta,
+												null,
+												_react2.default.createElement(
+													'span',
+													{ className: 'date' },
+													app.author
+												),
+												_react2.default.createElement(_semanticUiReact.Popup, { size: 'small', header: "Description", trigger: _react2.default.createElement(_semanticUiReact.Icon, { circular: true, name: 'info' }), content: app.description })
+											)
+										),
+										_react2.default.createElement(
+											_semanticUiReact.Card.Content,
+											{ extra: true },
+											_react2.default.createElement(
+												'div',
+												{ className: 'ui three buttons' },
+												installedApp && (0, _compare.versionCompare)(app.latest_version.version, installedApp.version, { 'lexicographical': true }) > 0 && _react2.default.createElement(
+													_semanticUiReact.Button,
+													{ disabled: !app.compatible, basic: true, color: 'blue' },
+													app.compatible == true ? "Upgrade" : "Incompatible"
+												),
+												!installedApp && _react2.default.createElement(
+													_semanticUiReact.Button,
+													{ disabled: !app.compatible, basic: true, color: 'green' },
+													app.compatible == true ? "Install" : "Incompatible"
+												),
+												installedApp && _react2.default.createElement(
+													_semanticUiReact.Button,
+													{ basic: true, color: 'red' },
+													"Uninstall"
+												),
+												installedApp && _react2.default.createElement(
+													_semanticUiReact.Button,
+													{ basic: true, color: 'yellow' },
+													"Suspend"
+												)
+											)
+										),
+										_react2.default.createElement(
+											_semanticUiReact.Card.Content,
+											{ extra: true },
+											_react2.default.createElement(
+												_semanticUiReact.Grid,
+												{ centered: true },
+												_react2.default.createElement(
+													_semanticUiReact.Grid.Row,
+													{ centered: true, columns: installedApp ? 2 : 1 },
+													installedApp && _react2.default.createElement(
+														_semanticUiReact.Grid.Column,
+														{ textAlign: 'center' },
+														_react2.default.createElement(
+															_semanticUiReact.Label,
+															{ size: 'tiny' },
+															_react2.default.createElement(_semanticUiReact.Icon, { name: 'hdd' }),
+															'Installed:v' + installedApp.version
+														)
+													),
+													_react2.default.createElement(
+														_semanticUiReact.Grid.Column,
+														{ textAlign: 'center' },
+														_react2.default.createElement(
+															_semanticUiReact.Label,
+															{ color: 'blue', size: 'tiny' },
+															_react2.default.createElement(_semanticUiReact.Icon, { name: 'download' }),
+															'Latest:v' + app.latest_version.version
+														)
+													)
+												)
+											)
+										)
+									);
+								})
+							)
+						)
+					),
+					!apps.storeAppsLoading && !apps.installedAppsLoading && !appStores.loading && appFilters.searchText === "" && totalPages > 0 && _react2.default.createElement(
+						_semanticUiReact.Grid.Row,
+						{ centered: true },
+						_react2.default.createElement(
+							_semanticUiReact.Grid.Column,
+							{ textAlign: 'center' },
+							_react2.default.createElement(_Pagination2.default, null)
+						)
+					)
+				)
+			);
+		}
+	}]);
+
+	return AppsList;
+}(_react2.default.Component);
+
+AppsList.propTypes = {
+	setInstalled: _propTypes2.default.func.isRequired,
+	setInstalledLoading: _propTypes2.default.func.isRequired,
+	setIntalledCount: _propTypes2.default.func.isRequired,
+	setStoreAppsList: _propTypes2.default.func.isRequired,
+	setStoreLoading: _propTypes2.default.func.isRequired,
+	setStoreCount: _propTypes2.default.func.isRequired,
+	apps: _propTypes2.default.object.isRequired,
+	appFilters: _propTypes2.default.object.isRequired,
+	appStores: _propTypes2.default.object.isRequired
+};
+var mapStateToProps = function mapStateToProps(state) {
+	return {
+		apps: state.apps,
+		appStores: state.appStores,
+		appFilters: state.appFilters
+	};
+};
+var mapDispatchToProps = function mapDispatchToProps(dispatch) {
+	return {
+		setInstalled: function setInstalled(apps) {
+			return dispatch((0, _apps2.setInstalledApps)(apps));
+		},
+		setInstalledLoading: function setInstalledLoading(loading) {
+			return dispatch((0, _apps2.installedAppsLoading)(loading));
+		},
+		setIntalledCount: function setIntalledCount(count) {
+			return dispatch((0, _apps2.installedAppsTotalCount)(count));
+		},
+		setStoreAppsList: function setStoreAppsList(apps) {
+			return dispatch((0, _storeApps.setStoreApps)(apps));
+		},
+		setStoreLoading: function setStoreLoading(loading) {
+			return dispatch((0, _storeApps.storeAppsLoading)(loading));
+		},
+		setStoreCount: function setStoreCount(count) {
+			return dispatch((0, _storeApps.storeAppsTotalCount)(count));
+		}
+	};
+};
+
+exports.default = (0, _reactRedux.connect)(mapStateToProps, mapDispatchToProps)(AppsList);
+
+/***/ }),
+
+/***/ "./src/components/CardsLoading.jsx":
+/*!*****************************************!*\
+  !*** ./src/components/CardsLoading.jsx ***!
+  \*****************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var _semanticUiReact = __webpack_require__(/*! semantic-ui-react */ "./node_modules/semantic-ui-react/dist/es/index.js");
+
+var _propTypes = __webpack_require__(/*! prop-types */ "./node_modules/prop-types/index.js");
+
+var _propTypes2 = _interopRequireDefault(_propTypes);
 
 var _react = __webpack_require__(/*! react */ "./node_modules/react/index.js");
 
@@ -1690,294 +2072,215 @@ var _react2 = _interopRequireDefault(_react);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var AppsList = function AppsList() {
+var CardsLoading = function CardsLoading(props) {
 	return _react2.default.createElement(
 		_semanticUiReact.Card.Group,
 		{ centered: true },
-		_react2.default.createElement(
-			_semanticUiReact.Card,
-			{ centered: true },
-			_react2.default.createElement(_semanticUiReact.Image, { src: 'https://react.semantic-ui.com/images/avatar/large/matthew.png' }),
-			_react2.default.createElement(
-				_semanticUiReact.Card.Content,
-				null,
+		Array(props.cardsCount).fill().map(function (_, i) {
+			return _react2.default.createElement(
+				_semanticUiReact.Card,
+				{ centered: true, key: i },
 				_react2.default.createElement(
-					_semanticUiReact.Card.Header,
+					_semanticUiReact.Placeholder,
 					null,
-					'Matthew'
+					_react2.default.createElement(_semanticUiReact.Placeholder.Image, { square: true })
 				),
 				_react2.default.createElement(
-					_semanticUiReact.Card.Meta,
+					_semanticUiReact.Card.Content,
 					null,
 					_react2.default.createElement(
-						'span',
-						{ className: 'date' },
-						'Joined in 2015'
+						_semanticUiReact.Placeholder,
+						null,
+						_react2.default.createElement(
+							_semanticUiReact.Placeholder.Header,
+							null,
+							_react2.default.createElement(_semanticUiReact.Placeholder.Line, { length: 'very short' }),
+							_react2.default.createElement(_semanticUiReact.Placeholder.Line, { length: 'medium' })
+						),
+						_react2.default.createElement(
+							_semanticUiReact.Placeholder.Paragraph,
+							null,
+							_react2.default.createElement(_semanticUiReact.Placeholder.Line, { length: 'short' })
+						)
 					)
 				),
 				_react2.default.createElement(
-					_semanticUiReact.Card.Description,
-					null,
-					"Elliot is a sound engineer living in Nashville who enjoys playing guitar and hanging with his cat."
-				)
-			),
-			_react2.default.createElement(
-				_semanticUiReact.Card.Content,
-				{ extra: true },
-				_react2.default.createElement(
-					'div',
-					{ className: 'ui two buttons' },
+					_semanticUiReact.Card.Content,
+					{ extra: true },
 					_react2.default.createElement(
-						_semanticUiReact.Button,
-						{ basic: true, color: 'green' },
-						"Approve"
-					),
-					_react2.default.createElement(
-						_semanticUiReact.Button,
-						{ basic: true, color: 'red' },
-						"Decline"
+						'div',
+						{ className: 'ui three buttons' },
+						_react2.default.createElement(
+							_semanticUiReact.Button,
+							{ basic: true, disabled: true, color: 'green' },
+							"Install"
+						),
+						_react2.default.createElement(
+							_semanticUiReact.Button,
+							{ basic: true, disabled: true, color: 'red' },
+							"Uninstall"
+						),
+						_react2.default.createElement(
+							_semanticUiReact.Button,
+							{ basic: true, disabled: true, color: 'red' },
+							"Suspend"
+						)
 					)
 				)
-			),
-			_react2.default.createElement(
-				_semanticUiReact.Card.Content,
-				{ extra: true },
-				_react2.default.createElement(
-					'a',
-					null,
-					_react2.default.createElement(_semanticUiReact.Icon, { name: 'user' }),
-					"4 Friends"
-				)
-			)
-		),
-		_react2.default.createElement(
-			_semanticUiReact.Card,
-			{ centered: true },
-			_react2.default.createElement(_semanticUiReact.Image, { src: 'https://react.semantic-ui.com/images/avatar/large/matthew.png' }),
-			_react2.default.createElement(
-				_semanticUiReact.Card.Content,
-				null,
-				_react2.default.createElement(
-					_semanticUiReact.Card.Header,
-					null,
-					'Matthew'
-				),
-				_react2.default.createElement(
-					_semanticUiReact.Card.Meta,
-					null,
-					_react2.default.createElement(
-						'span',
-						{ className: 'date' },
-						'Joined in 2015'
-					)
-				),
-				_react2.default.createElement(
-					_semanticUiReact.Card.Description,
-					null,
-					"Elliot is a sound engineer living in Nashville who enjoys playing guitar and hanging with his cat."
-				)
-			),
-			_react2.default.createElement(
-				_semanticUiReact.Card.Content,
-				{ extra: true },
-				_react2.default.createElement(
-					'div',
-					{ className: 'ui two buttons' },
-					_react2.default.createElement(
-						_semanticUiReact.Button,
-						{ basic: true, color: 'green' },
-						"Approve"
-					),
-					_react2.default.createElement(
-						_semanticUiReact.Button,
-						{ basic: true, color: 'red' },
-						"Decline"
-					)
-				)
-			),
-			_react2.default.createElement(
-				_semanticUiReact.Card.Content,
-				{ extra: true },
-				_react2.default.createElement(
-					'a',
-					null,
-					_react2.default.createElement(_semanticUiReact.Icon, { name: 'user' }),
-					"4 Friends"
-				)
-			)
-		),
-		_react2.default.createElement(
-			_semanticUiReact.Card,
-			{ centered: true },
-			_react2.default.createElement(_semanticUiReact.Image, { src: 'https://react.semantic-ui.com/images/avatar/large/matthew.png' }),
-			_react2.default.createElement(
-				_semanticUiReact.Card.Content,
-				null,
-				_react2.default.createElement(
-					_semanticUiReact.Card.Header,
-					null,
-					'Matthew'
-				),
-				_react2.default.createElement(
-					_semanticUiReact.Card.Meta,
-					null,
-					_react2.default.createElement(
-						'span',
-						{ className: 'date' },
-						'Joined in 2015'
-					)
-				),
-				_react2.default.createElement(
-					_semanticUiReact.Card.Description,
-					null,
-					"Elliot is a sound engineer living in Nashville who enjoys playing guitar and hanging with his cat."
-				)
-			),
-			_react2.default.createElement(
-				_semanticUiReact.Card.Content,
-				{ extra: true },
-				_react2.default.createElement(
-					'div',
-					{ className: 'ui two buttons' },
-					_react2.default.createElement(
-						_semanticUiReact.Button,
-						{ basic: true, color: 'green' },
-						"Approve"
-					),
-					_react2.default.createElement(
-						_semanticUiReact.Button,
-						{ basic: true, color: 'red' },
-						"Decline"
-					)
-				)
-			),
-			_react2.default.createElement(
-				_semanticUiReact.Card.Content,
-				{ extra: true },
-				_react2.default.createElement(
-					'a',
-					null,
-					_react2.default.createElement(_semanticUiReact.Icon, { name: 'user' }),
-					"4 Friends"
-				)
-			)
-		),
-		_react2.default.createElement(
-			_semanticUiReact.Card,
-			{ centered: true },
-			_react2.default.createElement(_semanticUiReact.Image, { src: 'https://react.semantic-ui.com/images/avatar/large/matthew.png' }),
-			_react2.default.createElement(
-				_semanticUiReact.Card.Content,
-				null,
-				_react2.default.createElement(
-					_semanticUiReact.Card.Header,
-					null,
-					'Matthew'
-				),
-				_react2.default.createElement(
-					_semanticUiReact.Card.Meta,
-					null,
-					_react2.default.createElement(
-						'span',
-						{ className: 'date' },
-						'Joined in 2015'
-					)
-				),
-				_react2.default.createElement(
-					_semanticUiReact.Card.Description,
-					null,
-					"Elliot is a sound engineer living in Nashville who enjoys playing guitar and hanging with his cat."
-				)
-			),
-			_react2.default.createElement(
-				_semanticUiReact.Card.Content,
-				{ extra: true },
-				_react2.default.createElement(
-					'div',
-					{ className: 'ui two buttons' },
-					_react2.default.createElement(
-						_semanticUiReact.Button,
-						{ basic: true, color: 'green' },
-						"Approve"
-					),
-					_react2.default.createElement(
-						_semanticUiReact.Button,
-						{ basic: true, color: 'red' },
-						"Decline"
-					)
-				)
-			),
-			_react2.default.createElement(
-				_semanticUiReact.Card.Content,
-				{ extra: true },
-				_react2.default.createElement(
-					'a',
-					null,
-					_react2.default.createElement(_semanticUiReact.Icon, { name: 'user' }),
-					"4 Friends"
-				)
-			)
-		),
-		_react2.default.createElement(
-			_semanticUiReact.Card,
-			{ centered: true },
-			_react2.default.createElement(_semanticUiReact.Image, { src: 'https://react.semantic-ui.com/images/avatar/large/matthew.png' }),
-			_react2.default.createElement(
-				_semanticUiReact.Card.Content,
-				null,
-				_react2.default.createElement(
-					_semanticUiReact.Card.Header,
-					null,
-					'Matthew'
-				),
-				_react2.default.createElement(
-					_semanticUiReact.Card.Meta,
-					null,
-					_react2.default.createElement(
-						'span',
-						{ className: 'date' },
-						'Joined in 2015'
-					)
-				),
-				_react2.default.createElement(
-					_semanticUiReact.Card.Description,
-					null,
-					"Elliot is a sound engineer living in Nashville who enjoys playing guitar and hanging with his cat."
-				)
-			),
-			_react2.default.createElement(
-				_semanticUiReact.Card.Content,
-				{ extra: true },
-				_react2.default.createElement(
-					'div',
-					{ className: 'ui two buttons' },
-					_react2.default.createElement(
-						_semanticUiReact.Button,
-						{ basic: true, color: 'green' },
-						"Approve"
-					),
-					_react2.default.createElement(
-						_semanticUiReact.Button,
-						{ basic: true, color: 'red' },
-						"Decline"
-					)
-				)
-			),
-			_react2.default.createElement(
-				_semanticUiReact.Card.Content,
-				{ extra: true },
-				_react2.default.createElement(
-					'a',
-					null,
-					_react2.default.createElement(_semanticUiReact.Icon, { name: 'user' }),
-					"4 Friends"
-				)
-			)
-		)
+			);
+		})
 	);
 };
+CardsLoading.propTypes = {
+	cardsCount: _propTypes2.default.number.isRequired
+};
+CardsLoading.defaultProps = {
+	cardsCount: 9
+};
+exports.default = CardsLoading;
 
-exports.default = AppsList;
+/***/ }),
+
+/***/ "./src/components/Filter.jsx":
+/*!***********************************!*\
+  !*** ./src/components/Filter.jsx ***!
+  \***********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _filter = __webpack_require__(/*! ../actions/filter */ "./src/actions/filter.js");
+
+var filterActions = _interopRequireWildcard(_filter);
+
+var _semanticUiReact = __webpack_require__(/*! semantic-ui-react */ "./node_modules/semantic-ui-react/dist/es/index.js");
+
+var _propTypes = __webpack_require__(/*! prop-types */ "./node_modules/prop-types/index.js");
+
+var _propTypes2 = _interopRequireDefault(_propTypes);
+
+var _react = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+
+var _react2 = _interopRequireDefault(_react);
+
+var _reactRedux = __webpack_require__(/*! react-redux */ "./node_modules/react-redux/es/index.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var sortTypeOptions = [{ key: 't', text: 'Ascending', value: 'asc' }, { key: 'f', text: 'Descending', value: 'desc' }];
+var sortByOptions = [{ key: 't', text: 'Title', value: 'title' }, { key: 'c', text: 'Compatibility', value: 'compatible' }, { key: 'd', text: 'Downloads', value: 'downloads' }];
+
+var Filters = function (_React$Component) {
+	_inherits(Filters, _React$Component);
+
+	function Filters() {
+		var _ref;
+
+		var _temp, _this, _ret;
+
+		_classCallCheck(this, Filters);
+
+		for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+			args[_key] = arguments[_key];
+		}
+
+		return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = Filters.__proto__ || Object.getPrototypeOf(Filters)).call.apply(_ref, [this].concat(args))), _this), _this.handleChange = function (e, _ref2) {
+			var value = _ref2.value;
+
+			_this.props.setSortBy(value);
+		}, _this.sortTypeChanged = function (e, _ref3) {
+			var value = _ref3.value;
+
+			_this.props.setSortType(value);
+		}, _this.handleTextChange = function (e, _ref4) {
+			var value = _ref4.value;
+			var setSearchText = _this.props.setSearchText;
+
+			setSearchText(value);
+		}, _temp), _possibleConstructorReturn(_this, _ret);
+	}
+
+	_createClass(Filters, [{
+		key: 'render',
+		value: function render() {
+			var appFilters = this.props.appFilters;
+
+			return _react2.default.createElement(
+				_semanticUiReact.Segment,
+				null,
+				_react2.default.createElement(
+					_semanticUiReact.Form,
+					null,
+					_react2.default.createElement(
+						_semanticUiReact.Form.Field,
+						null,
+						_react2.default.createElement(_semanticUiReact.Input, {
+							icon: _react2.default.createElement(_semanticUiReact.Icon, { name: 'search' }),
+							placeholder: 'Search...',
+							value: appFilters.searchText,
+							onChange: this.handleTextChange
+						})
+					),
+					_react2.default.createElement(
+						_semanticUiReact.Form.Group,
+						{ widths: 'equal', inline: true },
+						_react2.default.createElement(_semanticUiReact.Form.Select, { onChange: this.handleChange, label: 'Sort By', value: appFilters.sortBy, options: sortByOptions, placeholder: 'Sort Attribute' }),
+						_react2.default.createElement(_semanticUiReact.Form.Select, { onChange: this.sortTypeChanged, label: 'Sort Type', value: appFilters.sortType, options: sortTypeOptions, placeholder: 'Sort Type' })
+					)
+				)
+			);
+		}
+	}]);
+
+	return Filters;
+}(_react2.default.Component);
+
+Filters.propTypes = {
+	setSortBy: _propTypes2.default.func.isRequired,
+	setSearchText: _propTypes2.default.func.isRequired,
+	setSortType: _propTypes2.default.func.isRequired,
+	apps: _propTypes2.default.object.isRequired,
+	appStores: _propTypes2.default.object.isRequired,
+	appFilters: _propTypes2.default.object.isRequired
+};
+var mapStateToProps = function mapStateToProps(state) {
+	return {
+		apps: state.apps,
+		appStores: state.appStores,
+		appFilters: state.appFilters
+	};
+};
+var mapDispatchToProps = function mapDispatchToProps(dispatch) {
+	return {
+		setSortBy: function setSortBy(attributeName) {
+			return dispatch(filterActions.setSortBy(attributeName));
+		},
+		setSearchText: function setSearchText(text) {
+			return dispatch(filterActions.setSearchText(text));
+		},
+		setSortType: function setSortType(text) {
+			return dispatch(filterActions.setSortType(text));
+		}
+	};
+};
+
+exports.default = (0, _reactRedux.connect)(mapStateToProps, mapDispatchToProps)(Filters);
 
 /***/ }),
 
@@ -2263,27 +2566,102 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _filter = __webpack_require__(/*! ../actions/filter */ "./src/actions/filter.js");
+
+var filterActions = _interopRequireWildcard(_filter);
+
 var _semanticUiReact = __webpack_require__(/*! semantic-ui-react */ "./node_modules/semantic-ui-react/dist/es/index.js");
+
+var _propTypes = __webpack_require__(/*! prop-types */ "./node_modules/prop-types/index.js");
+
+var _propTypes2 = _interopRequireDefault(_propTypes);
 
 var _react = __webpack_require__(/*! react */ "./node_modules/react/index.js");
 
 var _react2 = _interopRequireDefault(_react);
 
+var _reactRedux = __webpack_require__(/*! react-redux */ "./node_modules/react-redux/es/index.js");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var AppPagination = function AppPagination() {
-	return _react2.default.createElement(_semanticUiReact.Pagination, {
-		defaultActivePage: 5,
-		ellipsisItem: { content: _react2.default.createElement(_semanticUiReact.Icon, { name: 'ellipsis horizontal' }), icon: true },
-		firstItem: { content: _react2.default.createElement(_semanticUiReact.Icon, { name: 'angle double left' }), icon: true },
-		lastItem: { content: _react2.default.createElement(_semanticUiReact.Icon, { name: 'angle double right' }), icon: true },
-		prevItem: { content: _react2.default.createElement(_semanticUiReact.Icon, { name: 'angle left' }), icon: true },
-		nextItem: { content: _react2.default.createElement(_semanticUiReact.Icon, { name: 'angle right' }), icon: true },
-		totalPages: 10
-	});
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var AppsPagination = function (_React$Component) {
+	_inherits(AppsPagination, _React$Component);
+
+	function AppsPagination() {
+		var _ref;
+
+		var _temp, _this, _ret;
+
+		_classCallCheck(this, AppsPagination);
+
+		for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+			args[_key] = arguments[_key];
+		}
+
+		return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = AppsPagination.__proto__ || Object.getPrototypeOf(AppsPagination)).call.apply(_ref, [this].concat(args))), _this), _this.handlePaginationChange = function (e, _ref2) {
+			var activePage = _ref2.activePage;
+
+			_this.props.setActivePage(activePage);
+		}, _this.getTotalPages = function () {
+			var _this$props = _this.props,
+			    apps = _this$props.apps,
+			    appFilters = _this$props.appFilters;
+
+			return Math.ceil(apps.storeCount / appFilters.itemsPerPage);
+		}, _temp), _possibleConstructorReturn(_this, _ret);
+	}
+
+	_createClass(AppsPagination, [{
+		key: 'render',
+		value: function render() {
+			var appFilters = this.props.appFilters;
+
+			return _react2.default.createElement(_semanticUiReact.Pagination, {
+				activePage: appFilters.activePage,
+				onPageChange: this.handlePaginationChange,
+				totalPages: this.getTotalPages(),
+				ellipsisItem: { content: _react2.default.createElement(_semanticUiReact.Icon, { name: 'ellipsis horizontal' }), icon: true },
+				firstItem: { content: _react2.default.createElement(_semanticUiReact.Icon, { name: 'angle double left' }), icon: true },
+				lastItem: { content: _react2.default.createElement(_semanticUiReact.Icon, { name: 'angle double right' }), icon: true },
+				prevItem: { content: _react2.default.createElement(_semanticUiReact.Icon, { name: 'angle left' }), icon: true },
+				nextItem: { content: _react2.default.createElement(_semanticUiReact.Icon, { name: 'angle right' }), icon: true }
+			});
+		}
+	}]);
+
+	return AppsPagination;
+}(_react2.default.Component);
+
+AppsPagination.propTypes = {
+	setActivePage: _propTypes2.default.func.isRequired,
+	apps: _propTypes2.default.object.isRequired,
+	appFilters: _propTypes2.default.object.isRequired
+};
+var mapStateToProps = function mapStateToProps(state) {
+	return {
+		apps: state.apps,
+		appFilters: state.appFilters
+	};
+};
+var mapDispatchToProps = function mapDispatchToProps(dispatch) {
+	return {
+		setActivePage: function setActivePage(pageNumber) {
+			return dispatch(filterActions.setActivePage(pageNumber));
+		}
+	};
 };
 
-exports.default = AppPagination;
+exports.default = (0, _reactRedux.connect)(mapStateToProps, mapDispatchToProps)(AppsPagination);
 
 /***/ }),
 
@@ -2313,32 +2691,7 @@ var update = __webpack_require__(/*! ../../node_modules/style-loader/lib/addStyl
 
 if(content.locals) module.exports = content.locals;
 
-if(true) {
-	module.hot.accept(/*! !../../node_modules/mini-css-extract-plugin/dist/loader.js!../../node_modules/css-loader??ref--5-2!../../node_modules/postcss-loader/src??postcss!./installer.css */ "./node_modules/mini-css-extract-plugin/dist/loader.js!./node_modules/css-loader/index.js?!./node_modules/postcss-loader/src/index.js?!./src/css/installer.css", function() {
-		var newContent = __webpack_require__(/*! !../../node_modules/mini-css-extract-plugin/dist/loader.js!../../node_modules/css-loader??ref--5-2!../../node_modules/postcss-loader/src??postcss!./installer.css */ "./node_modules/mini-css-extract-plugin/dist/loader.js!./node_modules/css-loader/index.js?!./node_modules/postcss-loader/src/index.js?!./src/css/installer.css");
-
-		if(typeof newContent === 'string') newContent = [[module.i, newContent, '']];
-
-		var locals = (function(a, b) {
-			var key, idx = 0;
-
-			for(key in a) {
-				if(!b || a[key] !== b[key]) return false;
-				idx++;
-			}
-
-			for(key in b) idx--;
-
-			return idx === 0;
-		}(content.locals, newContent.locals));
-
-		if(!locals) throw new Error('Aborting CSS HMR due to changed css-modules locals.');
-
-		update(newContent);
-	});
-
-	module.hot.dispose(function() { update(); });
-}
+if(false) {}
 
 /***/ }),
 
@@ -2366,49 +2719,120 @@ module.exports = __webpack_require__.p + "91f78f6aca8aea734c2fcac9411451ce.png";
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 exports.apps = apps;
-exports.appsLoading = appsLoading;
-exports.appsTotalCount = appsTotalCount;
 
 var _constants = __webpack_require__(/*! ../actions/constants */ "./src/actions/constants.js");
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
+var appsInitailState = {
+    installed: [],
+    storeApps: [],
+    installedAppsLoading: true,
+    storeAppsLoading: true,
+    installedCount: 0,
+    storeCount: 0,
+    inProgress: false
+};
 function apps() {
-    var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+    var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : appsInitailState;
     var action = arguments[1];
 
     switch (action.type) {
-        case _constants.ADD_APPS:
-            return [].concat(_toConsumableArray(state), _toConsumableArray(action.payload));
-        case _constants.DELETE_APPS:
-            return state.map(function (upload) {
-                return !action.payload.includes(upload.id);
+        case _constants.ADD_INSTALLED_APPS:
+            return _extends({}, state, { installed: [].concat(_toConsumableArray(state.installed), _toConsumableArray(action.payload)) });
+        case _constants.ADD_STORE_APPS:
+            return _extends({}, state, { storeApps: [].concat(_toConsumableArray(state.storeApps), _toConsumableArray(action.payload)) });
+        case _constants.DELETE_INSTALLED_APPS:
+            return _extends({}, state, {
+                installed: state.installed.map(function (app) {
+                    return !action.payload.includes(app.id);
+                })
             });
-        case _constants.SET_APPS:
-            return action.payload;
+        case _constants.DELETE_STORE_APPS:
+            return _extends({}, state, {
+                storeApps: state.storeApps.map(function (app) {
+                    return !action.payload.includes(app.id);
+                })
+            });
+        case _constants.SET_INSTALLED_APPS:
+            return _extends({}, state, { installed: action.payload });
+        case _constants.SET_STORE_APPS:
+            return _extends({}, state, { storeApps: action.payload });
+        case _constants.UPDATE_INSTALLED_APP:
+            return _extends({}, state, {
+                installed: state.installed.map(function (app) {
+                    return app.id === action.payload.id ? action.payload : app;
+                })
+            });
+        case _constants.UPDATE_STORE_APP:
+            return _extends({}, state, {
+                storeApps: state.storeApps.map(function (app) {
+                    return app.id === action.payload.id ? action.payload : app;
+                })
+            });
+        case _constants.INSTALLED_APPS_LOADING:
+            return _extends({}, state, { installedAppsLoading: action.payload });
+        case _constants.STORE_APPS_LOADING:
+            return _extends({}, state, { storeAppsLoading: action.payload });
+        case _constants.SET_APPS_TOTAL_COUNT:
+            return _extends({}, state, { installedCount: action.payload });
+        case _constants.SET_STORE_TOTAL_COUNT:
+            return _extends({}, state, { storeCount: action.payload });
+        case _constants.SET_ACTION_IN_PROGRESS:
+            return _extends({}, state, { inProgress: action.payload });
         default:
             return state;
     }
 }
-function appsLoading() {
-    var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+
+/***/ }),
+
+/***/ "./src/reducers/filter.js":
+/*!********************************!*\
+  !*** ./src/reducers/filter.js ***!
+  \********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+exports.appFilters = appFilters;
+
+var _constants = __webpack_require__(/*! ../actions/constants */ "./src/actions/constants.js");
+
+var appConfig = {
+    searchText: '',
+    sortBy: 'title',
+    activePage: 1,
+    itemsPerPage: 9,
+    sortType: 'asc'
+};
+function appFilters() {
+    var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : appConfig;
     var action = arguments[1];
 
     switch (action.type) {
-        case _constants.APPS_LOADING:
-            return action.payload;
-        default:
-            return state;
-    }
-}
-function appsTotalCount() {
-    var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-    var action = arguments[1];
-
-    switch (action.type) {
-        case _constants.SET_TOTAL_COUNT:
-            return action.payload;
+        case _constants.SET_SEARCH_TEXT:
+            return _extends({}, state, { searchText: action.payload });
+        case _constants.SET_SORT_BY:
+            return _extends({}, state, { sortBy: action.payload });
+        case _constants.SET_ACTIVE_PAGE:
+            return _extends({}, state, { activePage: action.payload });
+        case _constants.SET_ITEMS_PER_PAGE:
+            return _extends({}, state, { itemsPerPage: action.payload });
+        case _constants.SET_SORT_TYPE:
+            return _extends({}, state, { sortType: action.payload });
         default:
             return state;
     }
@@ -2430,16 +2854,20 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _apps = __webpack_require__(/*! ./apps */ "./src/reducers/apps.js");
-
 var _other = __webpack_require__(/*! ./other */ "./src/reducers/other.js");
+
+var _filter = __webpack_require__(/*! ./filter */ "./src/reducers/filter.js");
+
+var _stores = __webpack_require__(/*! ./stores */ "./src/reducers/stores.js");
+
+var _apps = __webpack_require__(/*! ./apps */ "./src/reducers/apps.js");
 
 var _redux = __webpack_require__(/*! redux */ "./node_modules/redux/es/redux.js");
 
 exports.default = (0, _redux.combineReducers)({
     apps: _apps.apps,
-    appsLoading: _apps.appsLoading,
-    appsTotalCount: _apps.appsTotalCount,
+    appStores: _stores.appStores,
+    appFilters: _filter.appFilters,
     urls: _other.urls,
     username: _other.username,
     token: _other.token
@@ -2502,6 +2930,49 @@ function token() {
 
 /***/ }),
 
+/***/ "./src/reducers/stores.js":
+/*!********************************!*\
+  !*** ./src/reducers/stores.js ***!
+  \********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+exports.appStores = appStores;
+
+var _constants = __webpack_require__(/*! ../actions/constants */ "./src/actions/constants.js");
+
+var appStoresInitailState = {
+    stores: [],
+    selectedStoreID: null,
+    loading: true
+};
+function appStores() {
+    var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : appStoresInitailState;
+    var action = arguments[1];
+
+    switch (action.type) {
+        case _constants.SELECT_APP_STORE:
+            return _extends({}, state, { selectedStoreID: action.payload });
+        case _constants.SET_APP_STORES:
+            return _extends({}, state, { stores: action.payload });
+        case _constants.APP_STORES_LOADING:
+            return _extends({}, state, { loading: action.payload });
+        default:
+            return state;
+    }
+}
+
+/***/ }),
+
 /***/ "./src/store/configureStore.js":
 /*!*************************************!*\
   !*** ./src/store/configureStore.js ***!
@@ -2523,6 +2994,8 @@ var _reduxThunk = __webpack_require__(/*! redux-thunk */ "./node_modules/redux-t
 
 var _reduxThunk2 = _interopRequireDefault(_reduxThunk);
 
+var _reduxDevtoolsExtension = __webpack_require__(/*! redux-devtools-extension */ "./node_modules/redux-devtools-extension/index.js");
+
 var _reducers = __webpack_require__(/*! ../reducers */ "./src/reducers/index.js");
 
 var _reducers2 = _interopRequireDefault(_reducers);
@@ -2530,7 +3003,7 @@ var _reducers2 = _interopRequireDefault(_reducers);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function configureStore(initialState) {
-    return (0, _redux.createStore)(_reducers2.default, initialState, (0, _redux.applyMiddleware)(_reduxThunk2.default));
+    return (0, _redux.createStore)(_reducers2.default, initialState, (0, _reduxDevtoolsExtension.composeWithDevTools)((0, _redux.applyMiddleware)(_reduxThunk2.default)));
 }
 
 /***/ }),
@@ -2568,7 +3041,7 @@ exports.default = store;
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(/*! /Users/hishamkaram/Projects-Active/geonode_oauth_client/app_manager/static/app-installer-frontend/src/Installer.jsx */"./src/Installer.jsx");
+module.exports = __webpack_require__(/*! /Users/hishamkaram/Projects-Active/geonode_oauth_client/cartoview/app_manager/static/app_installer/src/Installer.jsx */"./src/Installer.jsx");
 
 
 /***/ })

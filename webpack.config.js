@@ -35,16 +35,16 @@ module.exports = ( env, argv ) => {
         entry: {
             extVendors: [ 'react-redux', 'redux', ],
             polyfill: [ '@babel/polyfill', ],
-            lodash: [ 'lodash', ],
             react: [ 'react', 'react-dom' ],
             semanticUI: [ 'semantic-ui-react', ],
+            lodashLib: [ 'lodash', ],
             installer: [ path.join( APP_DIR, 'Installer.jsx' ), ],
         },
         output: {
             path: path.resolve( __dirname, './dist' ),
             filename: filename,
             chunkFilename: '[name].js',
-            publicPath: '/static/app-installer-frontend/dist/',
+            publicPath: '/static/app_installer/dist/',
         },
         optimization: {
             splitChunks: {
@@ -66,12 +66,6 @@ module.exports = ( env, argv ) => {
                         test: 'extVendors',
                         enforce: true
                     },
-                    lodash: {
-                        chunks: 'all',
-                        name: 'lodash',
-                        test: 'lodash',
-                        enforce: true
-                    },
                     react: {
                         chunks: 'all',
                         name: 'react',
@@ -82,6 +76,12 @@ module.exports = ( env, argv ) => {
                         chunks: 'all',
                         name: 'semanticUI',
                         test: 'semanticUI',
+                        enforce: true
+                    },
+                    lodashLib: {
+                        chunks: 'all',
+                        name: 'lodashLib',
+                        test: 'lodashLib',
                         enforce: true
                     },
                     polyfill: {
@@ -203,7 +203,6 @@ module.exports = ( env, argv ) => {
         ]
     } else {
         const devPlugin = [
-            new webpack.HotModuleReplacementPlugin(),
         ]
         config.devtool = 'cheap-module-source-map'
         Array.prototype.push.apply( plugins, devPlugin )

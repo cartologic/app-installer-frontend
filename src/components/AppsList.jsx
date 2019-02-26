@@ -1,141 +1,208 @@
-import { Button, Card, Icon, Image } from 'semantic-ui-react'
+import * as _ from 'lodash';
 
+import { Button, Card, Grid, Icon, Image, Label, Popup } from 'semantic-ui-react'
+import { getInstalledApps, getStoresApps } from '../api/apps'
+import { installedAppsLoading, installedAppsTotalCount, setInstalledApps, } from '../actions/apps'
+import { setStoreApps, storeAppsLoading, storeAppsTotalCount, } from '../actions/storeApps'
+
+import AppFilter from './Filter'
+import AppsPagination from './Pagination'
+import CardsLoading from './CardsLoading'
+import PropTypes from 'prop-types'
 import React from 'react'
+import { connect } from 'react-redux'
+import { versionCompare } from '../api/compare'
 
-const AppsList = () => (
-	<Card.Group centered>
-		<Card centered>
-			<Image src='https://react.semantic-ui.com/images/avatar/large/matthew.png' />
-			<Card.Content>
-				<Card.Header>Matthew</Card.Header>
-				<Card.Meta>
-					<span className='date'>Joined in 2015</span>
-				</Card.Meta>
-				<Card.Description>{"Elliot is a sound engineer living in Nashville who enjoys playing guitar and hanging with his cat."}</Card.Description>
-			</Card.Content>
-			<Card.Content extra>
-				<div className='ui two buttons'>
-					<Button basic color='green'>
-						{"Approve"}
-					</Button>
-					<Button basic color='red'>
-						{"Decline"}
-					</Button>
-				</div>
-			</Card.Content>
-			<Card.Content extra>
-				<a>
-					<Icon name='user' />
-					{"4 Friends"}
-				</a>
-			</Card.Content>
-		</Card>
-		<Card centered>
-			<Image src='https://react.semantic-ui.com/images/avatar/large/matthew.png' />
-			<Card.Content>
-				<Card.Header>Matthew</Card.Header>
-				<Card.Meta>
-					<span className='date'>Joined in 2015</span>
-				</Card.Meta>
-				<Card.Description>{"Elliot is a sound engineer living in Nashville who enjoys playing guitar and hanging with his cat."}</Card.Description>
-			</Card.Content>
-			<Card.Content extra>
-				<div className='ui two buttons'>
-					<Button basic color='green'>
-						{"Approve"}
-					</Button>
-					<Button basic color='red'>
-						{"Decline"}
-					</Button>
-				</div>
-			</Card.Content>
-			<Card.Content extra>
-				<a>
-					<Icon name='user' />
-					{"4 Friends"}
-				</a>
-			</Card.Content>
-		</Card>
-		<Card centered>
-			<Image src='https://react.semantic-ui.com/images/avatar/large/matthew.png' />
-			<Card.Content>
-				<Card.Header>Matthew</Card.Header>
-				<Card.Meta>
-					<span className='date'>Joined in 2015</span>
-				</Card.Meta>
-				<Card.Description>{"Elliot is a sound engineer living in Nashville who enjoys playing guitar and hanging with his cat."}</Card.Description>
-			</Card.Content>
-			<Card.Content extra>
-				<div className='ui two buttons'>
-					<Button basic color='green'>
-						{"Approve"}
-					</Button>
-					<Button basic color='red'>
-						{"Decline"}
-					</Button>
-				</div>
-			</Card.Content>
-			<Card.Content extra>
-				<a>
-					<Icon name='user' />
-					{"4 Friends"}
-				</a>
-			</Card.Content>
-		</Card>
-		<Card centered>
-			<Image src='https://react.semantic-ui.com/images/avatar/large/matthew.png' />
-			<Card.Content>
-				<Card.Header>Matthew</Card.Header>
-				<Card.Meta>
-					<span className='date'>Joined in 2015</span>
-				</Card.Meta>
-				<Card.Description>{"Elliot is a sound engineer living in Nashville who enjoys playing guitar and hanging with his cat."}</Card.Description>
-			</Card.Content>
-			<Card.Content extra>
-				<div className='ui two buttons'>
-					<Button basic color='green'>
-						{"Approve"}
-					</Button>
-					<Button basic color='red'>
-						{"Decline"}
-					</Button>
-				</div>
-			</Card.Content>
-			<Card.Content extra>
-				<a>
-					<Icon name='user' />
-					{"4 Friends"}
-				</a>
-			</Card.Content>
-		</Card>
-		<Card centered>
-			<Image src='https://react.semantic-ui.com/images/avatar/large/matthew.png' />
-			<Card.Content>
-				<Card.Header>Matthew</Card.Header>
-				<Card.Meta>
-					<span className='date'>Joined in 2015</span>
-				</Card.Meta>
-				<Card.Description>{"Elliot is a sound engineer living in Nashville who enjoys playing guitar and hanging with his cat."}</Card.Description>
-			</Card.Content>
-			<Card.Content extra>
-				<div className='ui two buttons'>
-					<Button basic color='green'>
-						{"Approve"}
-					</Button>
-					<Button basic color='red'>
-						{"Decline"}
-					</Button>
-				</div>
-			</Card.Content>
-			<Card.Content extra>
-				<a>
-					<Icon name='user' />
-					{"4 Friends"}
-				</a>
-			</Card.Content>
-		</Card>
+const colorsMapping = {
+	"Alpha": "red",
+	"Beta": "yellow",
+	"Stable": "green"
+}
+class AppsList extends React.Component {
+	componentDidUpdate(prevProps) {
+		const { appStores } = prevProps
+		if (this.props.appStores.selectedStoreID && appStores.selectedStoreID != this.props.appStores.selectedStoreID) {
+			const { setStoreAppsList, setStoreCount, setStoreLoading } = this.props
+			let store = this.props.appStores.stores.find(store => store.id === this.props.appStores.selectedStoreID)
+			getStoresApps(store).then(data => {
+				let storeApps = data.objects.map(storeApp => {
+					storeApp.compatible = false
+					const cartoview_versions = storeApp.latest_version.cartoview_version
+					for (let index = 0; index < cartoview_versions.length; index++) {
+						const cartoview_version = cartoview_versions[index]
+						if (versionCompare(cartoview_version.version, window.appInstallerProps.cartoview_version, { 'lexicographical': true }) == 0) {
+							storeApp.compatible = true
+							break
+						}
+					}
+					return storeApp
+				})
+				setStoreAppsList(storeApps)
+				setStoreCount(data.meta.total_count)
+				setStoreLoading(false)
+			})
+			const { setInstalled, setInstalledLoading, setIntalledCount } = this.props
+			getInstalledApps().then(data => {
+				setInstalled(data.results)
+				setIntalledCount(data.count)
+				setInstalledLoading(false)
+			})
+		}
+	}
+	sortApps = () => {
+		const { apps, appFilters } = this.props
 
-	</Card.Group>
-)
+		return _.orderBy(apps.storeApps, [appFilters.sortBy], [appFilters.sortType])
+	}
+	getTotalPages = () => {
+		const { apps, appFilters } = this.props
+		return Math.ceil(apps.storeCount / appFilters.itemsPerPage)
+	}
+	searchApps = (apps) => {
+		const { appFilters } = this.props
+		if (appFilters.searchText != "") {
+			return _.filter(apps, app => {
+				let { title, description } = app
+				let searchText = appFilters.searchText.toLowerCase()
+				title = title.toLowerCase()
+				description = description.toLowerCase()
+				return title.includes(searchText) || description.includes(searchText)
+			})
+		}
+		return apps
 
-export default AppsList
+	}
+	getApps = () => {
+		let apps = this.sortApps()
+		apps = this.searchApps(apps)
+		return this.paginate(apps)
+	}
+	paginate = (apps) => {
+		const { appFilters } = this.props
+		const startIndex = (appFilters.activePage - 1) * appFilters.itemsPerPage
+		const endIndex = appFilters.activePage * appFilters.itemsPerPage
+		return apps.slice(startIndex, endIndex)
+	}
+	getInstalledByName = (name) => {
+		const { apps } = this.props
+		return apps.installed.find(app => app.name == name)
+	}
+	render() {
+		const { apps, appStores, appFilters } = this.props
+		const totalPages = this.getTotalPages()
+		return (
+			<div>
+				{apps.storeAppsLoading || apps.installedAppsLoading || appStores.loading ?
+					<CardsLoading />
+					:
+					<Grid centered>
+						<Grid.Row centered>
+							<Grid.Column width={15} textAlign='center'>
+								<AppFilter />
+							</Grid.Column>
+						</Grid.Row>
+						<Grid.Row>
+							<Grid.Column>
+								<Card.Group centered>
+									{this.getApps().map(app => {
+										let installedApp = this.getInstalledByName(app.name)
+										return <Card centered key={app.id}>
+											<Image
+												wrapped
+												fluid
+												className="card-img "
+												label={{ as: 'a', color: colorsMapping[app.status], content: app.status, ribbon: true }}
+												src={app.latest_version.logo} />
+
+											<Card.Content>
+												<Card.Header>
+													{app.title}
+												</Card.Header>
+												<Card.Meta>
+													<span className='date'>{app.author}</span>
+													<Popup size="small" header={"Description"} trigger={<Icon circular name='info' />} content={app.description} />
+												</Card.Meta>
+											</Card.Content>
+											<Card.Content extra>
+												<div className='ui three buttons'>
+													{installedApp &&
+														versionCompare(app.latest_version.version, installedApp.version, { 'lexicographical': true }) > 0 &&
+														<Button disabled={!app.compatible} basic color='blue'>
+															{app.compatible == true ? "Upgrade" : "Incompatible"}
+														</Button>}
+													{!installedApp && <Button disabled={!app.compatible} basic color='green'>
+														{app.compatible == true ? "Install" : "Incompatible"}
+													</Button>}
+													{installedApp && <Button basic color='red'>
+														{"Uninstall"}
+													</Button>}
+													{installedApp && <Button basic color='yellow'>
+														{"Suspend"}
+													</Button>}
+
+												</div>
+											</Card.Content>
+											<Card.Content extra>
+												<Grid centered>
+													<Grid.Row centered columns={installedApp ? 2 : 1}>
+														{installedApp && <Grid.Column textAlign="center">
+															<Label size="tiny">
+																<Icon name='hdd' />
+																{`Installed:v${installedApp.version}`}
+															</Label>
+														</Grid.Column>}
+														<Grid.Column textAlign="center">
+															<Label color='blue' size="tiny">
+																<Icon name='download' />
+																{`Latest:v${app.latest_version.version}`}
+															</Label>
+														</Grid.Column>
+													</Grid.Row>
+												</Grid>
+											</Card.Content>
+										</Card>
+									})}
+								</Card.Group>
+							</Grid.Column>
+						</Grid.Row>
+						{!apps.storeAppsLoading && !apps.installedAppsLoading && !appStores.loading && appFilters.searchText === "" && totalPages > 0 && <Grid.Row centered>
+							<Grid.Column textAlign="center">
+								<AppsPagination />
+							</Grid.Column>
+						</Grid.Row>}
+					</Grid>
+				}
+			</div>
+		)
+	}
+}
+AppsList.propTypes = {
+	setInstalled: PropTypes.func.isRequired,
+	setInstalledLoading: PropTypes.func.isRequired,
+	setIntalledCount: PropTypes.func.isRequired,
+	setStoreAppsList: PropTypes.func.isRequired,
+	setStoreLoading: PropTypes.func.isRequired,
+	setStoreCount: PropTypes.func.isRequired,
+	apps: PropTypes.object.isRequired,
+	appFilters: PropTypes.object.isRequired,
+	appStores: PropTypes.object.isRequired,
+}
+const mapStateToProps = (state) => {
+	return {
+		apps: state.apps,
+		appStores: state.appStores,
+		appFilters: state.appFilters
+	}
+}
+const mapDispatchToProps = (dispatch) => {
+	return {
+		setInstalled: (apps) => dispatch(setInstalledApps(apps)),
+		setInstalledLoading: (loading) => dispatch(installedAppsLoading(loading)),
+		setIntalledCount: (count) => dispatch(installedAppsTotalCount(count)),
+		setStoreAppsList: (apps) => dispatch(setStoreApps(apps)),
+		setStoreLoading: (loading) => dispatch(storeAppsLoading(loading)),
+		setStoreCount: (count) => dispatch(storeAppsTotalCount(count)),
+	}
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(AppsList)

@@ -4,11 +4,12 @@ import './css/installer.css'
 
 import {
     Container,
+    Grid,
     Message,
 } from 'semantic-ui-react'
 import React, { Component } from 'react'
 
-import AppPagination from './components/Pagination'
+import AppStoreSelector from './components/AppStoreSelector'
 import AppsList from './components/AppsList'
 import Footer from './components/Footer'
 import NavBar from './components/NavBar'
@@ -25,15 +26,27 @@ class AppInstaller extends Component {
             <Provider store={store}>
                 <div>
                     <NavBar />
-                    <Container textAlign="center" style={{ marginTop: '7em' }}>
-                        <Message warning>
-                            <Message.Header>{"Warning!"}</Message.Header>
-                            <p>{"Please note that the web server will be restarted after installing or uninstalling any application."}</p>
-                        </Message>
-                        <AppsList />
-                        <br />
-
-                        <AppPagination />
+                    <Container textAlign="center" id="main-container">
+                        <Grid centered>
+                            <Grid.Row centered>
+                                <Grid.Column width={15}>
+                                    <Message warning>
+                                        <Message.Header>{"Warning!"}</Message.Header>
+                                        <p>{"Please note that the web server will be restarted after installing or uninstalling any application."}</p>
+                                    </Message>
+                                </Grid.Column>
+                            </Grid.Row>
+                            <Grid.Row centered>
+                                <Grid.Column width={15}>
+                                    <AppStoreSelector />
+                                </Grid.Column>
+                            </Grid.Row>
+                            <Grid.Row>
+                                <Grid.Column width={16}>
+                                    <AppsList />
+                                </Grid.Column>
+                            </Grid.Row>
+                        </Grid>
                     </Container>
                     <Footer />
                 </div>

@@ -3,7 +3,10 @@ body {
     margin: 0px;
     padding: 0px;
     height: 100%;
+}
 
+#main-container {
+    margin-top: 7em;
 }
 
 #root,
@@ -33,4 +36,18 @@ body {
 
 .element-block {
     display: block
+}
+
+.card-img {
+    /*Image should be a div*/
+    height: 300px !important;
+}
+
+.card-img img {
+    height: 100% !important;
+}
+
+.fill {
+    display: flex;
+    flex-grow: 1;
 }

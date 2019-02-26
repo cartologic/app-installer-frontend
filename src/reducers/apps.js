@@ -1,34 +1,71 @@
 import {
-    ADD_APPS,
-    APPS_LOADING,
-    DELETE_APPS,
-    SET_APPS,
-    SET_TOTAL_COUNT
+    ADD_INSTALLED_APPS,
+    ADD_STORE_APPS,
+    DELETE_INSTALLED_APPS,
+    DELETE_STORE_APPS,
+    INSTALLED_APPS_LOADING,
+    SET_ACTION_IN_PROGRESS,
+    SET_APPS_TOTAL_COUNT,
+    SET_INSTALLED_APPS,
+    SET_STORE_APPS,
+    SET_STORE_TOTAL_COUNT,
+    STORE_APPS_LOADING,
+    UPDATE_INSTALLED_APP,
+    UPDATE_STORE_APP
 } from '../actions/constants'
-export function apps( state = [], action ) {
-    switch ( action.type ) {
-    case ADD_APPS:
-        return [ ...state, ...action.payload ]
-    case DELETE_APPS:
-        return state.map( upload => !action.payload.includes( upload.id ) )
-    case SET_APPS:
-        return action.payload
-    default:
-        return state
-    }
+let appsInitailState = {
+    installed: [],
+    storeApps: [],
+    installedAppsLoading: true,
+    storeAppsLoading: true,
+    installedCount: 0,
+    storeCount: 0,
+    inProgress: false
 }
-export function appsLoading( state = true, action ) {
+export function apps( state = appsInitailState, action ) {
     switch ( action.type ) {
-    case APPS_LOADING:
-        return action.payload
-    default:
-        return state
-    }
-}
-export function appsTotalCount( state = 0, action ) {
-    switch ( action.type ) {
-    case SET_TOTAL_COUNT:
-        return action.payload
+    case ADD_INSTALLED_APPS:
+        return { ...state, installed: [ ...state.installed, ...action.payload ] }
+    case ADD_STORE_APPS:
+        return { ...state, storeApps: [ ...state.storeApps, ...action.payload ] }
+    case DELETE_INSTALLED_APPS:
+        return {
+            ...state,
+            installed: state.installed.map( app => !action.payload.includes(
+                app.id ) )
+        }
+    case DELETE_STORE_APPS:
+        return {
+            ...state,
+            storeApps: state.storeApps.map( app => !action.payload.includes(
+                app.id ) )
+        }
+    case SET_INSTALLED_APPS:
+        return { ...state, installed: action.payload }
+    case SET_STORE_APPS:
+        return { ...state, storeApps: action.payload }
+    case UPDATE_INSTALLED_APP:
+        return {
+            ...state,
+            installed: state.installed.map( app => app.id === action.payload.id ?
+                action.payload : app )
+        }
+    case UPDATE_STORE_APP:
+        return {
+            ...state,
+            storeApps: state.storeApps.map( app => app.id === action.payload.id ?
+                action.payload : app )
+        }
+    case INSTALLED_APPS_LOADING:
+        return { ...state, installedAppsLoading: action.payload }
+    case STORE_APPS_LOADING:
+        return { ...state, storeAppsLoading: action.payload }
+    case SET_APPS_TOTAL_COUNT:
+        return { ...state, installedCount: action.payload }
+    case SET_STORE_TOTAL_COUNT:
+        return { ...state, storeCount: action.payload }
+    case SET_ACTION_IN_PROGRESS:
+        return { ...state, inProgress: action.payload }
     default:
         return state
     }

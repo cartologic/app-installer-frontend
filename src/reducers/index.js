@@ -1,19 +1,24 @@
 import {
-    apps,
-    appsLoading,
-    appsTotalCount
-} from './apps'
-import {
     token,
     urls,
     username
 } from './other'
 
+import {
+    appFilters,
+} from './filter'
+import {
+    appStores,
+} from './stores'
+import {
+    apps,
+} from './apps'
 import { combineReducers } from 'redux'
+
 export default combineReducers( {
     apps,
-    appsLoading,
-    appsTotalCount,
+    appStores,
+    appFilters,
     urls,
     username,
     token,
