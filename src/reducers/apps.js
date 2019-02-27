@@ -28,7 +28,7 @@ export function apps( state = appsInitailState, action ) {
         return { ...state, installed: [ ...state.installed, ...action.payload ] }
     case ADD_STORE_APPS:
         return { ...state, storeApps: [ ...state.storeApps, ...action.payload ] }
-    case DELETE_INSTALLED_APPS:
+    case DELETE_INSTALLED_APPS:        
         return {
             ...state,
             installed: state.installed.map( app => !action.payload.includes(
@@ -47,14 +47,22 @@ export function apps( state = appsInitailState, action ) {
     case UPDATE_INSTALLED_APP:
         return {
             ...state,
-            installed: state.installed.map( app => app.id === action.payload.id ?
-                action.payload : app )
+            installed: state.installed.map( app => {
+                if ( app.id === action.payload.id ) {
+                    return { ...app, ...action.payload }
+                }
+                return app
+            } )
         }
     case UPDATE_STORE_APP:
         return {
             ...state,
-            storeApps: state.storeApps.map( app => app.id === action.payload.id ?
-                action.payload : app )
+            storeApps: state.storeApps.map( storeApp => {
+                if ( storeApp.id === action.payload.id ) {
+                    return { ...storeApp, ...action.payload }
+                }
+                return storeApp
+            } )
         }
     case INSTALLED_APPS_LOADING:
         return { ...state, installedAppsLoading: action.payload }

@@ -860,13 +860,9 @@ var _AppsList = __webpack_require__(/*! ./components/AppsList */ "./src/componen
 
 var _AppsList2 = _interopRequireDefault(_AppsList);
 
-var _Footer = __webpack_require__(/*! ./components/Footer */ "./src/components/Footer.jsx");
+var _ErrorList = __webpack_require__(/*! ./components/ErrorList */ "./src/components/ErrorList.jsx");
 
-var _Footer2 = _interopRequireDefault(_Footer);
-
-var _NavBar = __webpack_require__(/*! ./components/NavBar */ "./src/components/NavBar.jsx");
-
-var _NavBar2 = _interopRequireDefault(_NavBar);
+var _ErrorList2 = _interopRequireDefault(_ErrorList);
 
 var _reactRedux = __webpack_require__(/*! react-redux */ "./node_modules/react-redux/es/index.js");
 
@@ -904,13 +900,21 @@ var AppInstaller = function (_Component) {
                 _react2.default.createElement(
                     'div',
                     null,
-                    _react2.default.createElement(_NavBar2.default, null),
                     _react2.default.createElement(
                         _semanticUiReact.Container,
-                        { textAlign: 'center', id: 'main-container' },
+                        { id: 'main-container' },
                         _react2.default.createElement(
                             _semanticUiReact.Grid,
                             { centered: true },
+                            _react2.default.createElement(
+                                _semanticUiReact.Grid.Row,
+                                { centered: true },
+                                _react2.default.createElement(
+                                    _semanticUiReact.Grid.Column,
+                                    { width: 15 },
+                                    _react2.default.createElement(_ErrorList2.default, null)
+                                )
+                            ),
                             _react2.default.createElement(
                                 _semanticUiReact.Grid.Row,
                                 { centered: true },
@@ -952,8 +956,7 @@ var AppInstaller = function (_Component) {
                                 )
                             )
                         )
-                    ),
-                    _react2.default.createElement(_Footer2.default, null)
+                    )
                 )
             );
         }
@@ -1097,6 +1100,9 @@ var SET_ACTIVE_PAGE = exports.SET_ACTIVE_PAGE = "SET_ACTIVE_PAGE";
 var SET_ITEMS_PER_PAGE = exports.SET_ITEMS_PER_PAGE = "SET_ITEMS_PER_PAGE";
 var SET_SORT_TYPE = exports.SET_SORT_TYPE = "SET_SORT_TYPE";
 var UPDATE_STORE_APP = exports.UPDATE_STORE_APP = "UPDATE_STORE_APP";
+var SET_ERRORS = exports.SET_ERRORS = "SET_ERRORS";
+var ADD_ERRORS = exports.ADD_ERRORS = "ADD_ERRORS";
+var DELETE_ERROR = exports.DELETE_ERROR = "DELETE_ERROR";
 var SET_ACTION_IN_PROGRESS = exports.SET_ACTION_IN_PROGRESS = "SET_ACTION_IN_PROGRESS";
 var SET_APP_STORES = exports.SET_APP_STORES = "SET_APP_STORES";
 var SELECT_APP_STORE = exports.SELECT_APP_STORE = "SELECT_APP_STORE";
@@ -1112,6 +1118,46 @@ var SET_STORE_TOTAL_COUNT = exports.SET_STORE_TOTAL_COUNT = "SET_STORE_TOTAL_COU
 var SET_URLS = exports.SET_URLS = "SET_URLS";
 var SET_USERNAME = exports.SET_USERNAME = "SET_USERNAME";
 var SET_TOKEN = exports.SET_TOKEN = "SET_TOKEN";
+
+/***/ }),
+
+/***/ "./src/actions/errors.js":
+/*!*******************************!*\
+  !*** ./src/actions/errors.js ***!
+  \*******************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.setErrors = setErrors;
+exports.deleteError = deleteError;
+exports.addError = addError;
+
+var _constants = __webpack_require__(/*! ./constants */ "./src/actions/constants.js");
+
+function setErrors(errors) {
+    return {
+        type: _constants.SET_ERRORS,
+        payload: errors
+    };
+}
+function deleteError(error) {
+    return {
+        type: _constants.DELETE_ERROR,
+        payload: error
+    };
+}
+function addError(errors) {
+    return {
+        type: _constants.ADD_ERRORS,
+        payload: errors
+    };
+}
 
 /***/ }),
 
@@ -1410,6 +1456,8 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+exports.getCRSFToken = getCRSFToken;
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function updateProgress(evt) {
@@ -1421,7 +1469,14 @@ function updateProgress(evt) {
 function transferComplete(evt) {
 	console.log("The transfer is complete.");
 }
-
+function getCRSFToken() {
+	var csrfToken = void 0,
+	    csrfMatch = document.cookie.match(/csrftoken=(\w+)/);
+	if (csrfMatch && csrfMatch.length > 0) {
+		csrfToken = csrfMatch[1];
+	}
+	return csrfToken;
+}
 function transferFailed(evt) {
 	console.error("An error occurred while transferring the file.");
 }
@@ -1694,19 +1749,31 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _lodash = __webpack_require__(/*! lodash */ "./node_modules/lodash/lodash.js");
 
 var _ = _interopRequireWildcard(_lodash);
 
-var _semanticUiReact = __webpack_require__(/*! semantic-ui-react */ "./node_modules/semantic-ui-react/dist/es/index.js");
+var _apps = __webpack_require__(/*! ../actions/apps */ "./src/actions/apps.js");
 
-var _apps = __webpack_require__(/*! ../api/apps */ "./src/api/apps.jsx");
+var appsActions = _interopRequireWildcard(_apps);
 
-var _apps2 = __webpack_require__(/*! ../actions/apps */ "./src/actions/apps.js");
+var _errors = __webpack_require__(/*! ../actions/errors */ "./src/actions/errors.js");
+
+var errorActions = _interopRequireWildcard(_errors);
 
 var _storeApps = __webpack_require__(/*! ../actions/storeApps */ "./src/actions/storeApps.js");
+
+var storeActions = _interopRequireWildcard(_storeApps);
+
+var _utils = __webpack_require__(/*! ../api/utils */ "./src/api/utils.jsx");
+
+var _semanticUiReact = __webpack_require__(/*! semantic-ui-react */ "./node_modules/semantic-ui-react/dist/es/index.js");
+
+var _apps2 = __webpack_require__(/*! ../api/apps */ "./src/api/apps.jsx");
 
 var _Filter = __webpack_require__(/*! ./Filter */ "./src/components/Filter.jsx");
 
@@ -1742,6 +1809,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+var requests = new _utils.ApiRequests();
 var colorsMapping = {
 	"Alpha": "red",
 	"Beta": "yellow",
@@ -1791,9 +1859,14 @@ var AppsList = function (_React$Component) {
 			}
 			return apps;
 		}, _this.getApps = function () {
+			var appFilters = _this.props.appFilters;
+
 			var apps = _this.sortApps();
 			apps = _this.searchApps(apps);
-			return _this.paginate(apps);
+			if (appFilters.searchText === "") {
+				apps = _this.paginate(apps);
+			}
+			return apps;
 		}, _this.paginate = function (apps) {
 			var appFilters = _this.props.appFilters;
 
@@ -1806,6 +1879,71 @@ var AppsList = function (_React$Component) {
 			return apps.installed.find(function (app) {
 				return app.name == name;
 			});
+		}, _this.installApp = function (app) {
+			return function () {
+				var _this$props3 = _this.props,
+				    appStores = _this$props3.appStores,
+				    setInProgress = _this$props3.setInProgress,
+				    updateStoreApp = _this$props3.updateStoreApp,
+				    addInstalledApps = _this$props3.addInstalledApps,
+				    addError = _this$props3.addError;
+
+				app.installing = true;
+				setInProgress(true);
+				updateStoreApp(app);
+				var data = JSON.stringify({
+					'app_name': app.name,
+					"store_id": appStores.selectedStoreID,
+					"app_version": app.latest_version.version
+				});
+				requests.doPost(window.appInstallerProps.urls.install, data, {
+					"Content-Type": "application/json",
+					"X-CSRFToken": (0, _utils.getCRSFToken)()
+				}).then(function (data) {
+					if (!Object.keys(data).includes("details")) {
+						addInstalledApps([data]);
+						updateStoreApp(_extends({}, app, { compatible: true, installing: false }));
+						setInProgress(false);
+					} else {
+						addError([data.details]);
+					}
+				}).catch(function (error) {
+					app.installing = false;
+					setInProgress(false);
+					updateStoreApp(app);
+					addError([error.message]);
+				});
+			};
+		}, _this.uninstallApp = function (app) {
+			return function () {
+				var _this$props4 = _this.props,
+				    deleteInstalledApps = _this$props4.deleteInstalledApps,
+				    setInProgress = _this$props4.setInProgress,
+				    updateStoreApp = _this$props4.updateStoreApp,
+				    addError = _this$props4.addError;
+
+				var installedApp = _this.getInstalledByName(app.name);
+				app.uninstalling = true;
+				setInProgress(true);
+				updateStoreApp(app);
+				requests.doGet(window.appInstallerProps.urls.appsURL + (installedApp.id + '/uninstall/'), {
+					"Content-Type": "application/json",
+					"X-CSRFToken": (0, _utils.getCRSFToken)()
+				}).then(function (data) {
+					if (!Object.keys(data).includes("details")) {
+						deleteInstalledApps([data.id]);
+						updateStoreApp(_extends({}, app, { uninstalling: false }));
+						setInProgress(false);
+					} else {
+						addError([data.details]);
+					}
+				}).catch(function (error) {
+					app.uninstalling = false;
+					setInProgress(false);
+					updateStoreApp(app);
+					addError([error.message]);
+				});
+			};
 		}, _temp), _possibleConstructorReturn(_this, _ret);
 	}
 
@@ -1825,9 +1963,11 @@ var AppsList = function (_React$Component) {
 				var store = this.props.appStores.stores.find(function (store) {
 					return store.id === _this2.props.appStores.selectedStoreID;
 				});
-				(0, _apps.getStoresApps)(store).then(function (data) {
+				(0, _apps2.getStoresApps)(store).then(function (data) {
 					var storeApps = data.objects.map(function (storeApp) {
 						storeApp.compatible = false;
+						storeApp.installing = false;
+						storeApp.uninstalling = false;
 						var cartoview_versions = storeApp.latest_version.cartoview_version;
 						for (var index = 0; index < cartoview_versions.length; index++) {
 							var cartoview_version = cartoview_versions[index];
@@ -1847,7 +1987,7 @@ var AppsList = function (_React$Component) {
 				    setInstalledLoading = _props2.setInstalledLoading,
 				    setIntalledCount = _props2.setIntalledCount;
 
-				(0, _apps.getInstalledApps)().then(function (data) {
+				(0, _apps2.getInstalledApps)().then(function (data) {
 					setInstalled(data.results);
 					setIntalledCount(data.count);
 					setInstalledLoading(false);
@@ -1927,22 +2067,22 @@ var AppsList = function (_React$Component) {
 												{ className: 'ui three buttons' },
 												installedApp && (0, _compare.versionCompare)(app.latest_version.version, installedApp.version, { 'lexicographical': true }) > 0 && _react2.default.createElement(
 													_semanticUiReact.Button,
-													{ disabled: !app.compatible, basic: true, color: 'blue' },
+													{ onClick: _this3.installApp(app), loading: app.installing, disabled: !app.compatible || apps.inProgress, basic: true, color: app.compatible ? 'blue' : 'black' },
 													app.compatible == true ? "Upgrade" : "Incompatible"
 												),
 												!installedApp && _react2.default.createElement(
 													_semanticUiReact.Button,
-													{ disabled: !app.compatible, basic: true, color: 'green' },
+													{ loading: app.installing, onClick: _this3.installApp(app), disabled: !app.compatible || apps.inProgress, basic: true, color: app.compatible == true ? 'green' : 'black' },
 													app.compatible == true ? "Install" : "Incompatible"
 												),
 												installedApp && _react2.default.createElement(
 													_semanticUiReact.Button,
-													{ basic: true, color: 'red' },
+													{ loading: app.uninstalling, onClick: _this3.uninstallApp(app), disabled: apps.inProgress, basic: true, color: 'red' },
 													"Uninstall"
 												),
 												installedApp && _react2.default.createElement(
 													_semanticUiReact.Button,
-													{ basic: true, color: 'yellow' },
+													{ disabled: apps.inProgress, basic: true, color: 'yellow' },
 													"Suspend"
 												)
 											)
@@ -2008,9 +2148,14 @@ AppsList.propTypes = {
 	setStoreAppsList: _propTypes2.default.func.isRequired,
 	setStoreLoading: _propTypes2.default.func.isRequired,
 	setStoreCount: _propTypes2.default.func.isRequired,
+	setInProgress: _propTypes2.default.func.isRequired,
 	apps: _propTypes2.default.object.isRequired,
 	appFilters: _propTypes2.default.object.isRequired,
-	appStores: _propTypes2.default.object.isRequired
+	appStores: _propTypes2.default.object.isRequired,
+	updateStoreApp: _propTypes2.default.func.isRequired,
+	addInstalledApps: _propTypes2.default.func.isRequired,
+	deleteInstalledApps: _propTypes2.default.func.isRequired,
+	addError: _propTypes2.default.func.isRequired
 };
 var mapStateToProps = function mapStateToProps(state) {
 	return {
@@ -2022,22 +2167,37 @@ var mapStateToProps = function mapStateToProps(state) {
 var mapDispatchToProps = function mapDispatchToProps(dispatch) {
 	return {
 		setInstalled: function setInstalled(apps) {
-			return dispatch((0, _apps2.setInstalledApps)(apps));
+			return dispatch(appsActions.setInstalledApps(apps));
 		},
 		setInstalledLoading: function setInstalledLoading(loading) {
-			return dispatch((0, _apps2.installedAppsLoading)(loading));
+			return dispatch(appsActions.installedAppsLoading(loading));
 		},
 		setIntalledCount: function setIntalledCount(count) {
-			return dispatch((0, _apps2.installedAppsTotalCount)(count));
+			return dispatch(appsActions.installedAppsTotalCount(count));
 		},
 		setStoreAppsList: function setStoreAppsList(apps) {
-			return dispatch((0, _storeApps.setStoreApps)(apps));
+			return dispatch(storeActions.setStoreApps(apps));
 		},
 		setStoreLoading: function setStoreLoading(loading) {
-			return dispatch((0, _storeApps.storeAppsLoading)(loading));
+			return dispatch(storeActions.storeAppsLoading(loading));
 		},
 		setStoreCount: function setStoreCount(count) {
-			return dispatch((0, _storeApps.storeAppsTotalCount)(count));
+			return dispatch(storeActions.storeAppsTotalCount(count));
+		},
+		setInProgress: function setInProgress(loading) {
+			return dispatch(appsActions.actionInProgress(loading));
+		},
+		updateStoreApp: function updateStoreApp(app) {
+			return dispatch(storeActions.updateStoreApp(app));
+		},
+		addInstalledApps: function addInstalledApps(apps) {
+			return dispatch(appsActions.addApps(apps));
+		},
+		addError: function addError(error) {
+			return dispatch(errorActions.addError(error));
+		},
+		deleteInstalledApps: function deleteInstalledApps(apps) {
+			return dispatch(appsActions.deleteInstalledApps(apps));
 		}
 	};
 };
@@ -2138,6 +2298,106 @@ CardsLoading.defaultProps = {
 	cardsCount: 9
 };
 exports.default = CardsLoading;
+
+/***/ }),
+
+/***/ "./src/components/ErrorList.jsx":
+/*!**************************************!*\
+  !*** ./src/components/ErrorList.jsx ***!
+  \**************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _errors = __webpack_require__(/*! ../actions/errors */ "./src/actions/errors.js");
+
+var errorActions = _interopRequireWildcard(_errors);
+
+var _semanticUiReact = __webpack_require__(/*! semantic-ui-react */ "./node_modules/semantic-ui-react/dist/es/index.js");
+
+var _propTypes = __webpack_require__(/*! prop-types */ "./node_modules/prop-types/index.js");
+
+var _propTypes2 = _interopRequireDefault(_propTypes);
+
+var _react = __webpack_require__(/*! react */ "./node_modules/react/index.js");
+
+var _react2 = _interopRequireDefault(_react);
+
+var _reactRedux = __webpack_require__(/*! react-redux */ "./node_modules/react-redux/es/index.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var ErrorList = function (_React$Component) {
+	_inherits(ErrorList, _React$Component);
+
+	function ErrorList() {
+		_classCallCheck(this, ErrorList);
+
+		return _possibleConstructorReturn(this, (ErrorList.__proto__ || Object.getPrototypeOf(ErrorList)).apply(this, arguments));
+	}
+
+	_createClass(ErrorList, [{
+		key: 'render',
+		value: function render() {
+			var _props = this.props,
+			    appErrors = _props.appErrors,
+			    deleteError = _props.deleteError;
+
+			return _react2.default.createElement(
+				'div',
+				null,
+				appErrors.errors.map(function (err, index) {
+					return _react2.default.createElement(_semanticUiReact.Message, {
+						onDismiss: function onDismiss() {
+							return deleteError(err);
+						},
+						key: index,
+						header: 'Error!',
+						icon: _react2.default.createElement(_semanticUiReact.Icon, { name: 'info circle' }),
+						content: err
+					});
+				})
+			);
+		}
+	}]);
+
+	return ErrorList;
+}(_react2.default.Component);
+
+ErrorList.propTypes = {
+	appErrors: _propTypes2.default.object.isRequired,
+	deleteError: _propTypes2.default.func.isRequired
+};
+var mapStateToProps = function mapStateToProps(state) {
+	return {
+		appErrors: state.appErrors
+	};
+};
+var mapDispatchToProps = function mapDispatchToProps(dispatch) {
+	return {
+		deleteError: function deleteError(error) {
+			return dispatch(errorActions.deleteError(error));
+		}
+	};
+};
+
+exports.default = (0, _reactRedux.connect)(mapStateToProps, mapDispatchToProps)(ErrorList);
 
 /***/ }),
 
@@ -2284,274 +2544,6 @@ exports.default = (0, _reactRedux.connect)(mapStateToProps, mapDispatchToProps)(
 
 /***/ }),
 
-/***/ "./src/components/Footer.jsx":
-/*!***********************************!*\
-  !*** ./src/components/Footer.jsx ***!
-  \***********************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-exports.Footer = undefined;
-
-var _semanticUiReact = __webpack_require__(/*! semantic-ui-react */ "./node_modules/semantic-ui-react/dist/es/index.js");
-
-var _react = __webpack_require__(/*! react */ "./node_modules/react/index.js");
-
-var _react2 = _interopRequireDefault(_react);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var Footer = exports.Footer = function Footer(props) {
-	return _react2.default.createElement(
-		_semanticUiReact.Segment,
-		{ inverted: true, vertical: true, style: { margin: '5em 0em 0em', padding: '5em 0em' } },
-		_react2.default.createElement(
-			_semanticUiReact.Container,
-			{ textAlign: 'center' },
-			_react2.default.createElement(
-				_semanticUiReact.Grid,
-				{ divided: true, inverted: true, stackable: true },
-				_react2.default.createElement(
-					_semanticUiReact.Grid.Column,
-					{ width: 3 },
-					_react2.default.createElement(_semanticUiReact.Header, { inverted: true, as: 'h4', content: 'Group 1' }),
-					_react2.default.createElement(
-						_semanticUiReact.List,
-						{ link: true, inverted: true },
-						_react2.default.createElement(
-							_semanticUiReact.List.Item,
-							{ as: 'a' },
-							'Link One'
-						),
-						_react2.default.createElement(
-							_semanticUiReact.List.Item,
-							{ as: 'a' },
-							'Link Two'
-						),
-						_react2.default.createElement(
-							_semanticUiReact.List.Item,
-							{ as: 'a' },
-							'Link Three'
-						),
-						_react2.default.createElement(
-							_semanticUiReact.List.Item,
-							{ as: 'a' },
-							'Link Four'
-						)
-					)
-				),
-				_react2.default.createElement(
-					_semanticUiReact.Grid.Column,
-					{ width: 3 },
-					_react2.default.createElement(_semanticUiReact.Header, { inverted: true, as: 'h4', content: 'Group 2' }),
-					_react2.default.createElement(
-						_semanticUiReact.List,
-						{ link: true, inverted: true },
-						_react2.default.createElement(
-							_semanticUiReact.List.Item,
-							{ as: 'a' },
-							'Link One'
-						),
-						_react2.default.createElement(
-							_semanticUiReact.List.Item,
-							{ as: 'a' },
-							'Link Two'
-						),
-						_react2.default.createElement(
-							_semanticUiReact.List.Item,
-							{ as: 'a' },
-							'Link Three'
-						),
-						_react2.default.createElement(
-							_semanticUiReact.List.Item,
-							{ as: 'a' },
-							'Link Four'
-						)
-					)
-				),
-				_react2.default.createElement(
-					_semanticUiReact.Grid.Column,
-					{ width: 3 },
-					_react2.default.createElement(_semanticUiReact.Header, { inverted: true, as: 'h4', content: 'Group 3' }),
-					_react2.default.createElement(
-						_semanticUiReact.List,
-						{ link: true, inverted: true },
-						_react2.default.createElement(
-							_semanticUiReact.List.Item,
-							{ as: 'a' },
-							'Link One'
-						),
-						_react2.default.createElement(
-							_semanticUiReact.List.Item,
-							{ as: 'a' },
-							'Link Two'
-						),
-						_react2.default.createElement(
-							_semanticUiReact.List.Item,
-							{ as: 'a' },
-							'Link Three'
-						),
-						_react2.default.createElement(
-							_semanticUiReact.List.Item,
-							{ as: 'a' },
-							'Link Four'
-						)
-					)
-				),
-				_react2.default.createElement(
-					_semanticUiReact.Grid.Column,
-					{ width: 7 },
-					_react2.default.createElement(_semanticUiReact.Header, { inverted: true, as: 'h4', content: 'Footer Header' }),
-					_react2.default.createElement(
-						'p',
-						null,
-						"Extra space for a call to action inside the footer that could help re-engage users."
-					)
-				)
-			),
-			_react2.default.createElement(_semanticUiReact.Divider, { inverted: true, section: true }),
-			_react2.default.createElement(_semanticUiReact.Image, { centered: true, size: 'mini', src: '/logo.png' }),
-			_react2.default.createElement(
-				_semanticUiReact.List,
-				{ horizontal: true, inverted: true, divided: true, link: true, size: 'small' },
-				_react2.default.createElement(
-					_semanticUiReact.List.Item,
-					{ as: 'a', href: '#' },
-					"Site Map"
-				),
-				_react2.default.createElement(
-					_semanticUiReact.List.Item,
-					{ as: 'a', href: '#' },
-					"Contact Us"
-				),
-				_react2.default.createElement(
-					_semanticUiReact.List.Item,
-					{ as: 'a', href: '#' },
-					"Terms and Conditions"
-				),
-				_react2.default.createElement(
-					_semanticUiReact.List.Item,
-					{ as: 'a', href: '#' },
-					"Privacy Policy"
-				)
-			)
-		)
-	);
-};
-exports.default = Footer;
-
-/***/ }),
-
-/***/ "./src/components/NavBar.jsx":
-/*!***********************************!*\
-  !*** ./src/components/NavBar.jsx ***!
-  \***********************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-exports.NavBar = undefined;
-
-var _semanticUiReact = __webpack_require__(/*! semantic-ui-react */ "./node_modules/semantic-ui-react/dist/es/index.js");
-
-var _react = __webpack_require__(/*! react */ "./node_modules/react/index.js");
-
-var _react2 = _interopRequireDefault(_react);
-
-var _logo = __webpack_require__(/*! ../img/logo.png */ "./src/img/logo.png");
-
-var _logo2 = _interopRequireDefault(_logo);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var NavBar = exports.NavBar = function NavBar(props) {
-	return _react2.default.createElement(
-		_semanticUiReact.Menu,
-		{ fixed: 'top', inverted: true },
-		_react2.default.createElement(
-			_semanticUiReact.Container,
-			null,
-			_react2.default.createElement(
-				_semanticUiReact.Menu.Item,
-				{ as: 'a', header: true },
-				_react2.default.createElement(_semanticUiReact.Image, { size: 'small', src: _logo2.default, style: { marginRight: '1.5em' } })
-			),
-			_react2.default.createElement(
-				_semanticUiReact.Menu.Item,
-				{ as: 'a', href: "/" },
-				"Home"
-			),
-			_react2.default.createElement(
-				_semanticUiReact.Dropdown,
-				{ item: true, simple: true, text: 'Dropdown' },
-				_react2.default.createElement(
-					_semanticUiReact.Dropdown.Menu,
-					null,
-					_react2.default.createElement(
-						_semanticUiReact.Dropdown.Item,
-						null,
-						'List Item'
-					),
-					_react2.default.createElement(
-						_semanticUiReact.Dropdown.Item,
-						null,
-						'List Item'
-					),
-					_react2.default.createElement(_semanticUiReact.Dropdown.Divider, null),
-					_react2.default.createElement(
-						_semanticUiReact.Dropdown.Header,
-						null,
-						"Header Item"
-					),
-					_react2.default.createElement(
-						_semanticUiReact.Dropdown.Item,
-						null,
-						_react2.default.createElement('i', { className: 'dropdown icon' }),
-						_react2.default.createElement(
-							'span',
-							{ className: 'text' },
-							'Submenu'
-						),
-						_react2.default.createElement(
-							_semanticUiReact.Dropdown.Menu,
-							null,
-							_react2.default.createElement(
-								_semanticUiReact.Dropdown.Item,
-								null,
-								'List Item'
-							),
-							_react2.default.createElement(
-								_semanticUiReact.Dropdown.Item,
-								null,
-								'List Item'
-							)
-						)
-					),
-					_react2.default.createElement(
-						_semanticUiReact.Dropdown.Item,
-						null,
-						'List Item'
-					)
-				)
-			)
-		)
-	);
-};
-exports.default = NavBar;
-
-/***/ }),
-
 /***/ "./src/components/Pagination.jsx":
 /*!***************************************!*\
   !*** ./src/components/Pagination.jsx ***!
@@ -2695,17 +2687,6 @@ if(false) {}
 
 /***/ }),
 
-/***/ "./src/img/logo.png":
-/*!**************************!*\
-  !*** ./src/img/logo.png ***!
-  \**************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__.p + "91f78f6aca8aea734c2fcac9411451ce.png";
-
-/***/ }),
-
 /***/ "./src/reducers/apps.js":
 /*!******************************!*\
   !*** ./src/reducers/apps.js ***!
@@ -2765,13 +2746,19 @@ function apps() {
         case _constants.UPDATE_INSTALLED_APP:
             return _extends({}, state, {
                 installed: state.installed.map(function (app) {
-                    return app.id === action.payload.id ? action.payload : app;
+                    if (app.id === action.payload.id) {
+                        return _extends({}, app, action.payload);
+                    }
+                    return app;
                 })
             });
         case _constants.UPDATE_STORE_APP:
             return _extends({}, state, {
-                storeApps: state.storeApps.map(function (app) {
-                    return app.id === action.payload.id ? action.payload : app;
+                storeApps: state.storeApps.map(function (storeApp) {
+                    if (storeApp.id === action.payload.id) {
+                        return _extends({}, storeApp, action.payload);
+                    }
+                    return storeApp;
                 })
             });
         case _constants.INSTALLED_APPS_LOADING:
@@ -2784,6 +2771,53 @@ function apps() {
             return _extends({}, state, { storeCount: action.payload });
         case _constants.SET_ACTION_IN_PROGRESS:
             return _extends({}, state, { inProgress: action.payload });
+        default:
+            return state;
+    }
+}
+
+/***/ }),
+
+/***/ "./src/reducers/errors.js":
+/*!********************************!*\
+  !*** ./src/reducers/errors.js ***!
+  \********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+exports.appErrors = appErrors;
+
+var _constants = __webpack_require__(/*! ../actions/constants */ "./src/actions/constants.js");
+
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
+var errorsInitailState = {
+    errors: []
+};
+function appErrors() {
+    var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : errorsInitailState;
+    var action = arguments[1];
+
+    switch (action.type) {
+        case _constants.ADD_ERRORS:
+            return _extends({}, state, { errors: [].concat(_toConsumableArray(state.errors), _toConsumableArray(action.payload)) });
+        case _constants.DELETE_ERROR:
+            return _extends({}, state, {
+                errors: state.errors.filter(function (error) {
+                    return error !== action.payload;
+                })
+            });
+        case _constants.SET_ERRORS:
+            return _extends({}, state, { errors: action.payload });
         default:
             return state;
     }
@@ -2854,7 +2888,7 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _other = __webpack_require__(/*! ./other */ "./src/reducers/other.js");
+var _errors = __webpack_require__(/*! ./errors */ "./src/reducers/errors.js");
 
 var _filter = __webpack_require__(/*! ./filter */ "./src/reducers/filter.js");
 
@@ -2868,65 +2902,15 @@ exports.default = (0, _redux.combineReducers)({
     apps: _apps.apps,
     appStores: _stores.appStores,
     appFilters: _filter.appFilters,
-    urls: _other.urls,
-    username: _other.username,
-    token: _other.token
-});
-
-/***/ }),
-
-/***/ "./src/reducers/other.js":
-/*!*******************************!*\
-  !*** ./src/reducers/other.js ***!
-  \*******************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-exports.username = username;
-exports.urls = urls;
-exports.token = token;
-
-var _constants = __webpack_require__(/*! ../actions/constants */ "./src/actions/constants.js");
-
-function username() {
-    var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-    var action = arguments[1];
-
-    switch (action.type) {
-        case _constants.SET_USERNAME:
-            return action.payload;
-        default:
-            return state;
-    }
-}
-function urls() {
-    var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-    var action = arguments[1];
-
-    switch (action.type) {
-        case _constants.SET_URLS:
-            return action.payload;
-        default:
-            return state;
-    }
-}
-function token() {
-    var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-    var action = arguments[1];
-
-    switch (action.type) {
-        case _constants.SET_TOKEN:
-            return action.payload;
-        default:
-            return state;
-    }
-}
+    appErrors: _errors.appErrors
+    // urls,
+    // username,
+    // token,
+}); // import {
+//     token,
+//     urls,
+//     username
+// } from './other'
 
 /***/ }),
 

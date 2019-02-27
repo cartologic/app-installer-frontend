@@ -1,9 +1,11 @@
 import * as _ from 'lodash';
+import * as appsActions from '../actions/apps'
+import * as errorActions from '../actions/errors'
+import * as storeActions from '../actions/storeApps'
 
+import { ApiRequests, getCRSFToken } from '../api/utils'
 import { Button, Card, Grid, Icon, Image, Label, Popup } from 'semantic-ui-react'
 import { getInstalledApps, getStoresApps } from '../api/apps'
-import { installedAppsLoading, installedAppsTotalCount, setInstalledApps, } from '../actions/apps'
-import { setStoreApps, storeAppsLoading, storeAppsTotalCount, } from '../actions/storeApps'
 
 import AppFilter from './Filter'
 import AppsPagination from './Pagination'
@@ -13,6 +15,7 @@ import React from 'react'
 import { connect } from 'react-redux'
 import { versionCompare } from '../api/compare'
 
+const requests = new ApiRequests()
 const colorsMapping = {
 	"Alpha": "red",
 	"Beta": "yellow",
@@ -27,6 +30,8 @@ class AppsList extends React.Component {
 			getStoresApps(store).then(data => {
 				let storeApps = data.objects.map(storeApp => {
 					storeApp.compatible = false
+					storeApp.installing = false
+					storeApp.uninstalling = false
 					const cartoview_versions = storeApp.latest_version.cartoview_version
 					for (let index = 0; index < cartoview_versions.length; index++) {
 						const cartoview_version = cartoview_versions[index]
@@ -48,6 +53,7 @@ class AppsList extends React.Component {
 				setInstalledLoading(false)
 			})
 		}
+
 	}
 	sortApps = () => {
 		const { apps, appFilters } = this.props
@@ -73,9 +79,13 @@ class AppsList extends React.Component {
 
 	}
 	getApps = () => {
+		const { appFilters } = this.props
 		let apps = this.sortApps()
 		apps = this.searchApps(apps)
-		return this.paginate(apps)
+		if (appFilters.searchText === "") {
+			apps = this.paginate(apps)
+		}
+		return apps
 	}
 	paginate = (apps) => {
 		const { appFilters } = this.props
@@ -86,6 +96,60 @@ class AppsList extends React.Component {
 	getInstalledByName = (name) => {
 		const { apps } = this.props
 		return apps.installed.find(app => app.name == name)
+	}
+	installApp = (app) => () => {
+		const { appStores, setInProgress, updateStoreApp, addInstalledApps, addError } = this.props
+		app.installing = true
+		setInProgress(true)
+		updateStoreApp(app)
+		const data = JSON.stringify({
+			'app_name': app.name,
+			"store_id": appStores.selectedStoreID,
+			"app_version": app.latest_version.version
+		})
+		requests.doPost(window.appInstallerProps.urls.install, data,
+			{
+				"Content-Type": "application/json",
+				"X-CSRFToken": getCRSFToken(),
+			}).then(data => {
+				if (!Object.keys(data).includes("details")) {
+					addInstalledApps([data])
+					updateStoreApp({ ...app, compatible: true, installing: false })
+					setInProgress(false)
+				} else {
+					addError([data.details])
+				}
+			}).catch((error) => {
+				app.installing = false
+				setInProgress(false)
+				updateStoreApp(app)
+				addError([error.message])
+			})
+	}
+	uninstallApp = (app) => () => {
+		const { deleteInstalledApps, setInProgress, updateStoreApp, addError } = this.props
+		let installedApp = this.getInstalledByName(app.name)
+		app.uninstalling = true
+		setInProgress(true)
+		updateStoreApp(app)
+		requests.doGet(window.appInstallerProps.urls.appsURL + `${installedApp.id}/uninstall/`,
+			{
+				"Content-Type": "application/json",
+				"X-CSRFToken": getCRSFToken(),
+			}).then(data => {
+				if (!Object.keys(data).includes("details")) {
+					deleteInstalledApps([data.id])
+					updateStoreApp({ ...app, uninstalling: false })
+					setInProgress(false)
+				} else {
+					addError([data.details])
+				}
+			}).catch((error) => {
+				app.uninstalling = false
+				setInProgress(false)
+				updateStoreApp(app)
+				addError([error.message])
+			})
 	}
 	render() {
 		const { apps, appStores, appFilters } = this.props
@@ -127,16 +191,16 @@ class AppsList extends React.Component {
 												<div className='ui three buttons'>
 													{installedApp &&
 														versionCompare(app.latest_version.version, installedApp.version, { 'lexicographical': true }) > 0 &&
-														<Button disabled={!app.compatible} basic color='blue'>
+														<Button onClick={this.installApp(app)} loading={app.installing} disabled={!app.compatible || apps.inProgress} basic color={app.compatible ? 'blue' : 'black'}>
 															{app.compatible == true ? "Upgrade" : "Incompatible"}
 														</Button>}
-													{!installedApp && <Button disabled={!app.compatible} basic color='green'>
+													{!installedApp && <Button loading={app.installing} onClick={this.installApp(app)} disabled={!app.compatible || apps.inProgress} basic color={app.compatible == true ? 'green' : 'black'}>
 														{app.compatible == true ? "Install" : "Incompatible"}
 													</Button>}
-													{installedApp && <Button basic color='red'>
+													{installedApp && <Button loading={app.uninstalling} onClick={this.uninstallApp(app)} disabled={apps.inProgress} basic color='red'>
 														{"Uninstall"}
 													</Button>}
-													{installedApp && <Button basic color='yellow'>
+													{installedApp && <Button disabled={apps.inProgress} basic color='yellow'>
 														{"Suspend"}
 													</Button>}
 
@@ -183,9 +247,14 @@ AppsList.propTypes = {
 	setStoreAppsList: PropTypes.func.isRequired,
 	setStoreLoading: PropTypes.func.isRequired,
 	setStoreCount: PropTypes.func.isRequired,
+	setInProgress: PropTypes.func.isRequired,
 	apps: PropTypes.object.isRequired,
 	appFilters: PropTypes.object.isRequired,
 	appStores: PropTypes.object.isRequired,
+	updateStoreApp: PropTypes.func.isRequired,
+	addInstalledApps: PropTypes.func.isRequired,
+	deleteInstalledApps: PropTypes.func.isRequired,
+	addError: PropTypes.func.isRequired,
 }
 const mapStateToProps = (state) => {
 	return {
@@ -196,12 +265,17 @@ const mapStateToProps = (state) => {
 }
 const mapDispatchToProps = (dispatch) => {
 	return {
-		setInstalled: (apps) => dispatch(setInstalledApps(apps)),
-		setInstalledLoading: (loading) => dispatch(installedAppsLoading(loading)),
-		setIntalledCount: (count) => dispatch(installedAppsTotalCount(count)),
-		setStoreAppsList: (apps) => dispatch(setStoreApps(apps)),
-		setStoreLoading: (loading) => dispatch(storeAppsLoading(loading)),
-		setStoreCount: (count) => dispatch(storeAppsTotalCount(count)),
+		setInstalled: (apps) => dispatch(appsActions.setInstalledApps(apps)),
+		setInstalledLoading: (loading) => dispatch(appsActions.installedAppsLoading(loading)),
+		setIntalledCount: (count) => dispatch(appsActions.installedAppsTotalCount(count)),
+		setStoreAppsList: (apps) => dispatch(storeActions.setStoreApps(apps)),
+		setStoreLoading: (loading) => dispatch(storeActions.storeAppsLoading(loading)),
+		setStoreCount: (count) => dispatch(storeActions.storeAppsTotalCount(count)),
+		setInProgress: (loading) => dispatch(appsActions.actionInProgress(loading)),
+		updateStoreApp: (app) => dispatch(storeActions.updateStoreApp(app)),
+		addInstalledApps: (apps) => dispatch(appsActions.addApps(apps)),
+		addError: (error) => dispatch(errorActions.addError(error)),
+		deleteInstalledApps: (apps) => dispatch(appsActions.deleteInstalledApps(apps)),
 	}
 }
 

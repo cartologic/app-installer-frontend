@@ -11,8 +11,7 @@ import React, { Component } from 'react'
 
 import AppStoreSelector from './components/AppStoreSelector'
 import AppsList from './components/AppsList'
-import Footer from './components/Footer'
-import NavBar from './components/NavBar'
+import ErrorList from './components/ErrorList'
 import { Provider } from 'react-redux'
 import ReactDOM from 'react-dom'
 import store from './store'
@@ -25,9 +24,13 @@ class AppInstaller extends Component {
         return (
             <Provider store={store}>
                 <div>
-                    <NavBar />
-                    <Container textAlign="center" id="main-container">
+                    <Container id="main-container">
                         <Grid centered>
+                            <Grid.Row centered>
+                                <Grid.Column width={15}>
+                                    <ErrorList />
+                                </Grid.Column>
+                            </Grid.Row>
                             <Grid.Row centered>
                                 <Grid.Column width={15}>
                                     <Message warning>
@@ -48,7 +51,6 @@ class AppInstaller extends Component {
                             </Grid.Row>
                         </Grid>
                     </Container>
-                    <Footer />
                 </div>
             </Provider>
         )

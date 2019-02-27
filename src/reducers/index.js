@@ -1,9 +1,12 @@
-import {
-    token,
-    urls,
-    username
-} from './other'
+// import {
+//     token,
+//     urls,
+//     username
+// } from './other'
 
+import {
+    appErrors,
+} from './errors'
 import {
     appFilters,
 } from './filter'
@@ -14,12 +17,12 @@ import {
     apps,
 } from './apps'
 import { combineReducers } from 'redux'
-
 export default combineReducers( {
     apps,
     appStores,
     appFilters,
-    urls,
-    username,
-    token,
+    appErrors,
+    // urls,
+    // username,
+    // token,
 } )
