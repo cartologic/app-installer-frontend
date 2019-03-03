@@ -965,7 +965,12 @@ var AppInstaller = function (_Component) {
     return AppInstaller;
 }(_react.Component);
 
-_reactDom2.default.render(_react2.default.createElement(AppInstaller, null), document.getElementById('root'));
+var elem = document.getElementById("installer-app");
+if (!elem) {
+    elem = document.createElement('div', { "id": "installer-app" });
+    document.body.appendChild(elem);
+}
+_reactDom2.default.render(_react2.default.createElement(AppInstaller, null), elem);
 if (false) {}
 
 /***/ }),

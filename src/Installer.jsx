@@ -56,9 +56,12 @@ class AppInstaller extends Component {
         )
     }
 }
-ReactDOM.render(<AppInstaller />,
-    document.getElementById('root')
-)
+var elem = document.getElementById("installer-app")
+if (!elem) {
+    elem = document.createElement('div', { "id": "installer-app" })
+    document.body.appendChild(elem)
+}
+ReactDOM.render(<AppInstaller />, elem)
 if (module.hot) {
     module.hot.accept()
 }
