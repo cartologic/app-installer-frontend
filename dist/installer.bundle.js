@@ -1302,9 +1302,7 @@ var _utils = __webpack_require__(/*! ./utils */ "./src/api/utils.jsx");
 
 var requests = new _utils.ApiRequests();
 function getStoresApps(store) {
-	return requests.doGet(store.url + 'app/?server_type__name=' + store.server_type + '&cartoview_version=' + window.appInstallerProps.cartoview_version, undefined, {
-		mode: 'cors'
-	});
+	return requests.doExternalGet(store.url + 'app/?server_type__name=' + store.server_type + '&cartoview_version=' + window.appInstallerProps.cartoview_version);
 }
 function getInstalledApps() {
 	var urls = window.appInstallerProps.urls;
@@ -1532,15 +1530,34 @@ var ApiRequests = exports.ApiRequests = function () {
 			});
 		}
 	}, {
-		key: "doGet",
-		value: function doGet(url) {
+		key: "doExternalGet",
+		value: function doExternalGet(url) {
 			var extraHeaders = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 			var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
 			var headers = _extends({}, this.getHeaders(), extraHeaders);
 			return fetch(url, _extends({
 				method: 'GET',
-				credentials: options['mode'] && options['mode'] === 'cors' ? 'omit' : 'include'
+				mode: 'cors',
+				redirect: 'follow'
+			}, options, {
+				headers: headers
+			})).then(function (response) {
+				return response.json();
+			});
+		}
+	}, {
+		key: "doGet",
+		value: function doGet(url) {
+			var extraHeaders = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+			var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+
+			var headers = _extends({}, this.getHeaders(), extraHeaders);
+			var mode = options['mode'];
+			return fetch(url, _extends({
+				method: 'GET',
+				redirect: 'follow',
+				credentials: mode && mode === 'cors' ? 'omit' : 'include'
 			}, options, {
 				headers: headers
 			})).then(function (response) {

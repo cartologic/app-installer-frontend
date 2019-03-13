@@ -50,14 +50,29 @@ export class ApiRequests {
 			headers: headers
 		}).then((response) => response.text())
 	}
-	doGet(url, extraHeaders = {}, options = {}) {
+	doExternalGet(url, extraHeaders = {}, options = {}) {
 		let headers = {
 			...this.getHeaders(),
 			...extraHeaders
 		}
 		return fetch(url, {
 			method: 'GET',
-			credentials: options['mode'] && options['mode'] === 'cors' ? 'omit' : 'include',
+			mode: 'cors',
+			redirect: 'follow',
+			...options,
+			headers: headers
+		}).then((response) => response.json())
+	}
+	doGet(url, extraHeaders = {}, options = {}) {
+		let headers = {
+			...this.getHeaders(),
+			...extraHeaders
+		}
+		const mode = options['mode']
+		return fetch(url, {
+			method: 'GET',
+			redirect: 'follow',
+			credentials: mode && mode === 'cors' ? 'omit' : 'include',
 			...options,
 			headers: headers
 		}).then((response) => response.json())

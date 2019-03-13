@@ -1,9 +1,7 @@
 import { ApiRequests } from './utils'
 const requests = new ApiRequests()
 export function getStoresApps(store) {
-	return requests.doGet(`${store.url}app/?server_type__name=${store.server_type}&cartoview_version=${window.appInstallerProps.cartoview_version}`, undefined, {
-		mode: 'cors',
-	})
+	return requests.doExternalGet(`${store.url}app/?server_type__name=${store.server_type}&cartoview_version=${window.appInstallerProps.cartoview_version}`)
 }
 export function getInstalledApps() {
 	const { urls } = window.appInstallerProps
