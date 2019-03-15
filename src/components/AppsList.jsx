@@ -132,7 +132,7 @@ class AppsList extends React.Component {
 		app.uninstalling = true
 		setInProgress(true)
 		updateStoreApp(app)
-		requests.doGet(window.appInstallerProps.urls.appsURL + `${installedApp.id}/uninstall/`,
+		requests.doDelete(window.appInstallerProps.urls.appsURL + `${installedApp.id}/uninstall/`,
 			{
 				"Content-Type": "application/json",
 				"X-CSRFToken": getCRSFToken(),
